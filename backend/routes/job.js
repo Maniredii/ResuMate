@@ -337,4 +337,37 @@ router.post('/apply-job', authenticateToken, async (req, res) => {
   }
 });
 
+/**
+ * GET /application-history
+ * Fetch authenticated user's job application history
+ * Requires authentication middleware
+ */
+router.get('/application-history', authenticateToken, (req, res) => {
+  try {
+    const userId = req.user.userId;
+
+    // Query job_applications table filtered by user_id
+    // Sort results by applied_at descending (most recent first)
+    const applications = db.prepare(`
+      SELECT id, user_id, job_link, job_description, tailored_resume_path, status, applied_at
+      FROM job_applications
+      WHERE user_id = ?
+      ORDER BY applied_at DESC
+    `).all(userId);
+
+    // Return array of application records
+    res.json({
+      applications,
+      count: applications.length
+    });
+
+  } catch (error) {
+    console.error('Get application history error:', error);
+    res.status(500).json({
+      error: 'Server Error',
+      message: 'Failed to fetch application history'
+    });
+  }
+});
+
 export default router;

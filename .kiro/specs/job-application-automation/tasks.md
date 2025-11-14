@@ -250,8 +250,15 @@
     - Return appropriate HTTP status codes
     - _Requirements: 5.6, 6.1_
 
-- [ ] 9. Implement user profile and history endpoints
-  - [ ] 9.1 Create GET /get-user endpoint
+- [x] 9. Implement user profile and history endpoints
+
+
+
+
+
+
+  - [x] 9.1 Create GET /get-user endpoint
+
     - Implement route in backend/routes/user.js
     - Require authentication middleware
     - Fetch user data from database by user ID
@@ -259,7 +266,9 @@
     - Return user profile excluding password hash
     - _Requirements: 1.4, 10.6_
   
-  - [ ] 9.2 Create GET /application-history endpoint
+  - [x] 9.2 Create GET /application-history endpoint
+
+
     - Implement route in backend/routes/job.js
     - Require authentication middleware
     - Query job_applications table filtered by user_id
