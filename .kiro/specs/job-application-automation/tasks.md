@@ -125,29 +125,42 @@
     - Return structured array of skills
     - _Requirements: 4.2_
 
-- [ ] 6. Implement job scraping service
-  - [ ] 6.1 Create scraper service with Playwright
+- [x] 6. Implement job scraping service
+
+
+
+
+
+
+
+
+
+  - [x] 6.1 Create scraper service with Playwright
+
     - Create backend/services/scraper.service.js
     - Initialize Playwright browser in headless mode
     - Implement scrapeJobDescription function that accepts job URL
     - Add 30-second timeout for page loads
     - _Requirements: 3.1, 3.2, 3.3_
   
-  - [ ] 6.2 Add Indeed scraper implementation
+  - [x] 6.2 Add Indeed scraper implementation
+
     - Detect Indeed URLs
     - Navigate to job page and wait for content
     - Extract job title, company, and description using selectors
     - Return structured job data
     - _Requirements: 3.1, 3.2, 3.4_
   
-  - [ ] 6.3 Add Wellfound scraper implementation
+  - [x] 6.3 Add Wellfound scraper implementation
+
     - Detect Wellfound URLs
     - Navigate to job page and wait for content
     - Extract job title, company, and description using selectors
     - Return structured job data
     - _Requirements: 3.1, 3.2, 3.4_
   
-  - [ ] 6.4 Add error handling and retry logic
+  - [x] 6.4 Add error handling and retry logic
+
     - Implement try-catch blocks for navigation failures
     - Return descriptive error messages for timeouts
     - Close browser instances properly
