@@ -1,0 +1,11 @@
+# Create .gitignore file (if it doesn't exist)
+echo "# Dependencies" > .gitignore
+echo "node_modules/" >> .gitignore
+echo "" >> .gitignore
+echo "# Next.js" >> .gitignore
+echo ".next/" >> .gitignore
+echo "out/" >> .gitignore
+echo "" >> .gitignore
+echo "# Environment variables" >> .gitignore
+echo ".env.local" >> .gitignore
+echo ".env" >> .gitignore
