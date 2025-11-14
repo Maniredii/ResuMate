@@ -73,10 +73,30 @@ router.post('/apply-job', authenticateToken, async (req, res) => {
       console.log(`[Job Application] Successfully scraped job: ${jobData.title} at ${jobData.company}`);
     } catch (error) {
       console.error('[Job Application] Scraper failed:', error.message);
-      return res.status(500).json({
+      
+      // Determine appropriate status code based on error type
+      let statusCode = 500;
+      let userMessage = error.message;
+      let details = 'Please verify the job URL is correct and the job posting is still active.';
+      
+      if (error.message.includes('Unsupported job platform')) {
+        statusCode = 400;
+        details = 'Currently, only Indeed and Wellfound job postings are supported.';
+      } else if (error.message.includes('Timeout') || error.message.includes('30 seconds')) {
+        statusCode = 504;
+        details = 'The job page took too long to load. Please try again or check if the URL is accessible.';
+      } else if (error.message.includes('Network error') || error.message.includes('net::')) {
+        statusCode = 503;
+        details = 'Unable to reach the job posting website. Please check your internet connection and try again.';
+      } else if (error.message.includes('Invalid job URL')) {
+        statusCode = 400;
+        details = 'The provided URL is not valid. Please provide a complete job posting URL.';
+      }
+      
+      return res.status(statusCode).json({
         error: 'Scraper Error',
-        message: `Failed to extract job description: ${error.message}`,
-        details: 'Please verify the job URL is correct and the job posting is still active.'
+        message: `Failed to extract job description: ${userMessage}`,
+        details: details
       });
     }
 
@@ -99,10 +119,36 @@ router.post('/apply-job', authenticateToken, async (req, res) => {
       console.log('[Job Application] Resume tailored successfully');
     } catch (error) {
       console.error('[Job Application] AI service failed:', error.message);
-      return res.status(500).json({
+      
+      // Determine appropriate status code and user-friendly message
+      let statusCode = 500;
+      let userMessage = error.message;
+      let details = 'Please check your AI provider configuration and API key.';
+      
+      if (error.message.includes('API key not found')) {
+        statusCode = 500;
+        details = 'AI service is not properly configured. Please set up your API key in the environment variables.';
+      } else if (error.message.includes('Invalid AI provider')) {
+        statusCode = 500;
+        details = 'The configured AI provider is not supported. Please use openai, groq, openrouter, or gemini.';
+      } else if (error.message.includes('401') || error.message.includes('Unauthorized')) {
+        statusCode = 500;
+        details = 'Your AI API key is invalid or expired. Please update your API key in the settings.';
+      } else if (error.message.includes('429') || error.message.includes('rate limit')) {
+        statusCode = 429;
+        details = 'AI service rate limit exceeded. Please wait a moment and try again.';
+      } else if (error.message.includes('No response received')) {
+        statusCode = 503;
+        details = 'Unable to connect to the AI service. Please check your internet connection and try again.';
+      } else if (error.message.includes('timeout')) {
+        statusCode = 504;
+        details = 'AI service request timed out. Please try again.';
+      }
+      
+      return res.status(statusCode).json({
         error: 'AI Service Error',
-        message: `Failed to tailor resume: ${error.message}`,
-        details: 'Please check your AI provider configuration and API key.'
+        message: `Failed to tailor resume: ${userMessage}`,
+        details: details
       });
     }
 
@@ -155,6 +201,28 @@ router.post('/apply-job', authenticateToken, async (req, res) => {
     } catch (error) {
       console.error('[Job Application] Auto-apply failed:', error.message);
       
+      // Determine user-friendly error message
+      let userMessage = error.message;
+      let details = 'The resume was tailored successfully but the automatic submission failed. You may need to apply manually using the tailored resume.';
+      let statusCode = 500;
+      
+      if (error.message.includes('Unsupported job platform')) {
+        statusCode = 400;
+        details = 'Auto-apply is only supported for Indeed and Wellfound. Please apply manually to this job.';
+      } else if (error.message.includes('Could not find Apply button')) {
+        statusCode = 422;
+        details = 'Unable to locate the application form on this job page. The page structure may have changed or the job may require login.';
+      } else if (error.message.includes('Could not find Submit button')) {
+        statusCode = 422;
+        details = 'Unable to complete the application form. Some required fields may be missing or the form structure is not recognized.';
+      } else if (error.message.includes('Timeout') || error.message.includes('timeout')) {
+        statusCode = 504;
+        details = 'The application process took too long. The job site may be slow or unresponsive. Please try again later.';
+      } else if (error.message.includes('authentication') || error.message.includes('login')) {
+        statusCode = 401;
+        details = 'This job requires you to be logged in to the platform. Please apply manually after logging in.';
+      }
+      
       // Log error to database with status "error"
       try {
         const insertStmt = db.prepare(`
@@ -169,60 +237,102 @@ router.post('/apply-job', authenticateToken, async (req, res) => {
           relativeTailoredPath,
           'error'
         );
-        console.log('[Job Application] Error logged to database');
+        console.log('[Job Application] Error logged to database with status "error"');
       } catch (dbError) {
         console.error('[Job Application] Failed to log error to database:', dbError.message);
       }
 
-      return res.status(500).json({
+      return res.status(statusCode).json({
         error: 'Auto-Apply Error',
-        message: `Failed to submit application: ${error.message}`,
-        details: 'The resume was tailored successfully but the automatic submission failed. You may need to apply manually.'
+        message: `Failed to submit application: ${userMessage}`,
+        details: details,
+        tailoredResumePath: relativeTailoredPath // Provide path so user can apply manually
       });
     }
 
     // Step 7: Insert application record into job_applications table
     const status = applyResult.success ? 'applied' : 'error';
     
-    const insertStmt = db.prepare(`
-      INSERT INTO job_applications (user_id, job_link, job_description, tailored_resume_path, status)
-      VALUES (?, ?, ?, ?, ?)
-    `);
-    
-    const result = insertStmt.run(
-      userId,
-      jobUrl,
-      jobData.description,
-      relativeTailoredPath,
-      status
-    );
+    try {
+      const insertStmt = db.prepare(`
+        INSERT INTO job_applications (user_id, job_link, job_description, tailored_resume_path, status)
+        VALUES (?, ?, ?, ?, ?)
+      `);
+      
+      const result = insertStmt.run(
+        userId,
+        jobUrl,
+        jobData.description,
+        relativeTailoredPath,
+        status
+      );
 
-    // Fetch the created application record
-    const application = db.prepare(`
-      SELECT id, user_id, job_link, job_description, tailored_resume_path, status, applied_at
-      FROM job_applications
-      WHERE id = ?
-    `).get(result.lastInsertRowid);
+      // Fetch the created application record
+      const application = db.prepare(`
+        SELECT id, user_id, job_link, job_description, tailored_resume_path, status, applied_at
+        FROM job_applications
+        WHERE id = ?
+      `).get(result.lastInsertRowid);
 
-    // Step 8: Return success response with application details
-    res.status(201).json({
-      message: applyResult.success 
-        ? 'Application submitted successfully' 
-        : 'Application workflow completed but submission failed',
-      application: {
-        ...application,
-        jobTitle: jobData.title,
-        company: jobData.company,
-        platform: jobData.platform
-      },
-      applyResult
-    });
+      // Step 8: Return success response with application details
+      // If auto-apply failed but we got here, return 207 Multi-Status (partial success)
+      const responseStatus = applyResult.success ? 201 : 207;
+      
+      res.status(responseStatus).json({
+        message: applyResult.success 
+          ? 'Application submitted successfully' 
+          : 'Resume tailored successfully, but automatic submission failed',
+        application: {
+          ...application,
+          jobTitle: jobData.title,
+          company: jobData.company,
+          platform: jobData.platform
+        },
+        applyResult,
+        ...(applyResult.success ? {} : {
+          details: 'Your tailored resume has been saved. You can apply manually using the tailored resume.',
+          tailoredResumePath: relativeTailoredPath
+        })
+      });
+    } catch (dbError) {
+      console.error('[Job Application] Database error while saving application:', dbError.message);
+      
+      // Even if database save fails, the application may have been submitted
+      return res.status(500).json({
+        error: 'Database Error',
+        message: 'Failed to save application record to database',
+        details: applyResult.success 
+          ? 'Your application was submitted but we could not save the record. Please check your application history on the job platform.'
+          : 'Failed to save application details. Please try again.',
+        applyResult
+      });
+    }
 
   } catch (error) {
-    console.error('Job application workflow error:', error);
-    res.status(500).json({
+    console.error('[Job Application] Unexpected workflow error:', error);
+    
+    // Log detailed error for debugging
+    console.error('Error stack:', error.stack);
+    
+    // Determine if this is a database error
+    let statusCode = 500;
+    let userMessage = 'An unexpected error occurred while processing your job application.';
+    let details = 'Please try again. If the problem persists, contact support.';
+    
+    if (error.message && error.message.includes('database')) {
+      details = 'A database error occurred. Please ensure the application is properly configured.';
+    } else if (error.message && error.message.includes('ENOENT')) {
+      statusCode = 500;
+      details = 'A required file or directory was not found. Please check your file uploads.';
+    } else if (error.message && error.message.includes('EACCES')) {
+      statusCode = 500;
+      details = 'Permission denied accessing a required file or directory.';
+    }
+    
+    res.status(statusCode).json({
       error: 'Server Error',
-      message: 'Failed to process job application'
+      message: userMessage,
+      details: details
     });
   }
 });
