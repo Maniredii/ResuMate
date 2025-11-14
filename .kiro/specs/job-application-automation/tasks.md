@@ -13,7 +13,9 @@
   - Create directory structure: backend/uploads/{resumes,tailored,documents}, backend/config, backend/middleware, backend/routes, backend/services, backend/models
   - _Requirements: 7.1, 7.2, 7.5_
 
-- [-] 2. Set up SQLite database and schema
+- [x] 2. Set up SQLite database and schema
+
+
 
 
 
@@ -23,30 +25,48 @@
   - Create database initialization function that runs on server startup
   - _Requirements: 1.3, 7.1, 7.5_
 
-- [ ] 3. Implement authentication system
-  - [ ] 3.1 Create user registration endpoint
+- [x] 3. Implement authentication system
+
+
+
+
+
+
+  - [x] 3.1 Create user registration endpoint
+
     - Implement POST /register route in backend/routes/auth.js
     - Add email validation and password hashing with bcrypt (10 salt rounds)
     - Insert new user into users table with hashed password
     - Return success response with user data (excluding password)
     - _Requirements: 1.1, 1.5_
   
-  - [ ] 3.2 Create user login endpoint
+
+  - [x] 3.2 Create user login endpoint
+
     - Implement POST /login route in backend/routes/auth.js
     - Validate credentials against database
     - Generate JWT token with 24-hour expiration
     - Return token and user data
     - _Requirements: 1.2, 1.4_
   
-  - [ ] 3.3 Create JWT authentication middleware
+
+  - [x] 3.3 Create JWT authentication middleware
+
     - Implement authenticateToken middleware in backend/middleware/auth.js
     - Verify JWT token from Authorization header
     - Extract user ID and attach to request object
     - Return 401 for invalid/missing tokens
     - _Requirements: 1.2, 10.8_
 
-- [ ] 4. Implement file upload system
-  - [ ] 4.1 Configure Multer for file uploads
+- [x] 4. Implement file upload system
+
+
+
+
+
+
+  - [x] 4.1 Configure Multer for file uploads
+
     - Create backend/config/multer.js with storage configuration
     - Set up separate storage destinations for resumes, tailored resumes, and documents
     - Implement file naming strategy: {userId}_{timestamp}_{originalname}
@@ -54,22 +74,33 @@
     - Set file size limit to 10MB
     - _Requirements: 2.1, 2.2, 2.5_
   
-  - [ ] 4.2 Create resume upload endpoint
+
+  - [x] 4.2 Create resume upload endpoint
+
     - Implement POST /upload-resume route in backend/routes/upload.js
     - Use Multer middleware to handle file upload
     - Store file path in users table resume_path column
     - Return uploaded file information
     - _Requirements: 2.1, 2.3, 2.4_
   
-  - [ ] 4.3 Create document upload endpoint
+  - [x] 4.3 Create document upload endpoint
+
+
     - Implement POST /upload-document route in backend/routes/upload.js
     - Use Multer middleware to handle file upload
     - Insert file path and type into documents table
     - Associate document with authenticated user
     - _Requirements: 2.2, 2.3, 2.4_
 
-- [ ] 5. Implement AI service for resume tailoring
-  - [ ] 5.1 Create AI service module
+- [x] 5. Implement AI service for resume tailoring
+
+
+
+
+
+
+  - [x] 5.1 Create AI service module
+
     - Create backend/services/ai.service.js with provider abstraction
     - Implement OpenAI API integration using GPT-4o-mini model
     - Implement Groq API integration
@@ -77,14 +108,18 @@
     - Add provider selection based on environment variable
     - _Requirements: 4.1, 4.2, 8.1, 8.2, 8.3, 8.4_
   
-  - [ ] 5.2 Implement resume tailoring function
+
+  - [x] 5.2 Implement resume tailoring function
+
     - Create tailorResume function that accepts resume text and job description
     - Build AI prompt that emphasizes relevant skills and ATS optimization
     - Parse AI response and format as clean text
     - Handle API errors gracefully with fallback messages
     - _Requirements: 4.2, 4.3, 4.4, 8.5_
   
-  - [ ] 5.3 Implement skill extraction function
+  - [x] 5.3 Implement skill extraction function
+
+
     - Create extractSkills function that analyzes job descriptions
     - Use AI to identify key skills and requirements
     - Return structured array of skills
