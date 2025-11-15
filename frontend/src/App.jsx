@@ -5,6 +5,7 @@ import ProtectedRoute from './components/ProtectedRoute'
 import Register from './pages/Register'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
+import ApplyJob from './pages/ApplyJob'
 import { isAuthenticated } from './utils/auth'
 
 function App() {
@@ -42,9 +43,7 @@ function App() {
             path="/apply-job"
             element={
               <ProtectedRoute>
-                <div className="container mx-auto px-4 py-8">
-                  <h1 className="text-2xl font-bold">Apply to Job (Coming Soon)</h1>
-                </div>
+                <ApplyJob />
               </ProtectedRoute>
             }
           />
