@@ -59,6 +59,12 @@ const Navbar = () => {
                 Apply to Job
               </Link>
               <Link
+                to="/linkedin-scraper"
+                className="hover:text-blue-200 transition font-medium"
+              >
+                LinkedIn Scraper
+              </Link>
+              <Link
                 to="/history"
                 className="hover:text-blue-200 transition font-medium"
               >

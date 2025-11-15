@@ -186,6 +186,62 @@ VITE_API_URL=http://localhost:5000/api
 - **OpenRouter**: Sign up at [openrouter.ai](https://openrouter.ai/)
 - **Google Gemini**: Get API key from [Google AI Studio](https://makersuite.google.com/app/apikey)
 
+## 💾 Database Backup
+
+The system includes built-in database backup functionality to protect your data.
+
+### Creating Backups
+
+**Manual Backup:**
+```bash
+cd backend
+npm run backup
+```
+
+This creates a timestamped backup file in `backend/backups/` directory with the format:
+```
+database_backup_YYYY-MM-DD_HH-MM-SS.db
+```
+
+### Managing Backups
+
+**List All Backups:**
+```bash
+npm run backup:list
+```
+
+**Cleanup Old Backups:**
+Keep only the 10 most recent backups:
+```bash
+npm run backup:cleanup
+```
+
+Keep a specific number of backups:
+```bash
+node utils/backup.js cleanup 5
+```
+
+### Restoring from Backup
+
+To restore your database from a backup:
+
+1. Stop the backend server
+2. Navigate to the backend directory
+3. Replace the current database:
+   ```bash
+   cp backups/database_backup_YYYY-MM-DD_HH-MM-SS.db database.db
+   ```
+4. Restart the backend server
+
+### Backup Best Practices
+
+- Create backups before major updates or changes
+- Keep backups in a separate location for disaster recovery
+- Test restore procedures periodically
+- Consider automating backups with scheduled tasks
+
+For more details, see `backend/backups/README.md`.
+
 ## 📖 Usage Guide
 
 ### Starting the Application

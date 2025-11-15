@@ -1,6 +1,7 @@
 import multer from 'multer';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { sanitizeFilename } from '../middleware/validation.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -25,8 +26,8 @@ const resumeStorage = multer.diskStorage({
   filename: (req, file, cb) => {
     const userId = req.user?.userId || 'unknown';
     const timestamp = Date.now();
-    const originalName = file.originalname;
-    cb(null, `${userId}_${timestamp}_${originalName}`);
+    const sanitizedName = sanitizeFilename(file.originalname);
+    cb(null, `${userId}_${timestamp}_${sanitizedName}`);
   }
 });
 
@@ -38,8 +39,8 @@ const tailoredStorage = multer.diskStorage({
   filename: (req, file, cb) => {
     const userId = req.user?.userId || 'unknown';
     const timestamp = Date.now();
-    const originalName = file.originalname;
-    cb(null, `${userId}_${timestamp}_${originalName}`);
+    const sanitizedName = sanitizeFilename(file.originalname);
+    cb(null, `${userId}_${timestamp}_${sanitizedName}`);
   }
 });
 
@@ -51,8 +52,8 @@ const documentStorage = multer.diskStorage({
   filename: (req, file, cb) => {
     const userId = req.user?.userId || 'unknown';
     const timestamp = Date.now();
-    const originalName = file.originalname;
-    cb(null, `${userId}_${timestamp}_${originalName}`);
+    const sanitizedName = sanitizeFilename(file.originalname);
+    cb(null, `${userId}_${timestamp}_${sanitizedName}`);
   }
 });
 

@@ -226,6 +226,62 @@ const Dashboard = () => {
                 </p>
               </div>
             </Link>
+
+            {/* LinkedIn Scraper Button */}
+            <Link
+              to="/linkedin-scraper"
+              className="flex items-center p-4 border-2 border-purple-200 rounded-lg hover:border-purple-400 hover:bg-purple-50 transition group"
+            >
+              <div className="bg-purple-100 rounded-full p-3 mr-4 group-hover:bg-purple-200 transition">
+                <svg
+                  className="w-6 h-6 text-purple-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  />
+                </svg>
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-800">LinkedIn Scraper</h3>
+                <p className="text-sm text-gray-600">
+                  Analyze LinkedIn jobs & get PDF report
+                </p>
+              </div>
+            </Link>
+
+            {/* View History Button */}
+            <Link
+              to="/history"
+              className="flex items-center p-4 border-2 border-gray-200 rounded-lg hover:border-gray-400 hover:bg-gray-50 transition group"
+            >
+              <div className="bg-gray-100 rounded-full p-3 mr-4 group-hover:bg-gray-200 transition">
+                <svg
+                  className="w-6 h-6 text-gray-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-800">View History</h3>
+                <p className="text-sm text-gray-600">
+                  See all your applications
+                </p>
+              </div>
+            </Link>
           </div>
         </div>
 

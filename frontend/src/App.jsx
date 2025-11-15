@@ -8,6 +8,7 @@ import UploadResume from './pages/UploadResume'
 import ApplyJob from './pages/ApplyJob'
 import ApplicationHistory from './pages/ApplicationHistory'
 import Settings from './pages/Settings'
+import LinkedInScraper from './pages/LinkedInScraper'
 import { isAuthenticated } from './utils/auth'
 
 function App() {
@@ -59,6 +60,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Settings />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/linkedin-scraper"
+            element={
+              <ProtectedRoute>
+                <LinkedInScraper />
               </ProtectedRoute>
             }
           />

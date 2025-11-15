@@ -3,6 +3,11 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import db from '../config/database.js';
 import { logApiError } from '../utils/logger.js';
+import { 
+  validateRequiredFields, 
+  validateEmail, 
+  sanitizeRequestBody 
+} from '../middleware/validation.js';
 
 const router = express.Router();
 
@@ -10,26 +15,13 @@ const router = express.Router();
  * POST /register
  * Create a new user account
  */
-router.post('/register', async (req, res) => {
+router.post('/register', 
+  sanitizeRequestBody,
+  validateRequiredFields(['name', 'email', 'password']),
+  validateEmail,
+  async (req, res) => {
   try {
     const { name, email, password } = req.body;
-
-    // Validate required fields
-    if (!name || !email || !password) {
-      return res.status(400).json({
-        error: 'Validation Error',
-        message: 'Name, email, and password are required'
-      });
-    }
-
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return res.status(400).json({
-        error: 'Validation Error',
-        message: 'Invalid email format'
-      });
-    }
 
     // Check if user already exists
     const existingUser = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
@@ -81,17 +73,13 @@ router.post('/register', async (req, res) => {
  * POST /login
  * Authenticate user and return JWT token
  */
-router.post('/login', async (req, res) => {
+router.post('/login',
+  sanitizeRequestBody,
+  validateRequiredFields(['email', 'password']),
+  validateEmail,
+  async (req, res) => {
   try {
     const { email, password } = req.body;
-
-    // Validate required fields
-    if (!email || !password) {
-      return res.status(400).json({
-        error: 'Validation Error',
-        message: 'Email and password are required'
-      });
-    }
 
     // Find user by email
     const user = db.prepare(`

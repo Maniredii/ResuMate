@@ -4,10 +4,19 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { authenticateToken } from '../middleware/auth.js';
 import db from '../config/database.js';
-import { scrapeJobDescription } from '../services/scraper.service.js';
+import { scrapeJobDescription, scrapeLinkedInJob } from '../services/scraper.service.js';
 import { tailorResume } from '../services/ai.service.js';
 import { autoApply } from '../services/autoapply.service.js';
 import { logApiError } from '../utils/logger.js';
+import { 
+  validateJobUrlMiddleware, 
+  sanitizeRequestBody 
+} from '../middleware/validation.js';
+import {
+  readResumeContent,
+  updateResumeContent,
+  createResumeBackup
+} from '../services/document.service.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -22,18 +31,14 @@ const router = express.Router();
  * 3. Submit application via auto-apply
  * 4. Save application record to database
  */
-router.post('/apply-job', authenticateToken, async (req, res) => {
+router.post('/apply-job', 
+  authenticateToken, 
+  sanitizeRequestBody,
+  validateJobUrlMiddleware,
+  async (req, res) => {
   try {
     const { jobUrl } = req.body;
     const userId = req.user.userId;
-
-    // Validate job URL
-    if (!jobUrl || typeof jobUrl !== 'string') {
-      return res.status(400).json({
-        error: 'Validation Error',
-        message: 'Job URL is required'
-      });
-    }
 
     // Get user data from database
     const user = db.prepare(`
@@ -108,10 +113,19 @@ router.post('/apply-job', authenticateToken, async (req, res) => {
       });
     }
 
-    // Step 2: Read user's resume from file system
+    // Step 2: Create backup of original resume (first time only)
+    try {
+      await createResumeBackup(resumePath);
+    } catch (error) {
+      console.warn('[Job Application] Could not create backup:', error.message);
+      // Continue anyway - backup is optional
+    }
+
+    // Step 3: Read user's resume from file system (supports .docx and .txt)
     let originalResume;
     try {
-      originalResume = fs.readFileSync(resumePath, 'utf-8');
+      originalResume = await readResumeContent(resumePath);
+      console.log('[Job Application] Resume read successfully');
     } catch (error) {
       return res.status(500).json({
         error: 'File Error',
@@ -119,7 +133,7 @@ router.post('/apply-job', authenticateToken, async (req, res) => {
       });
     }
 
-    // Step 3: Call AI service to tailor resume
+    // Step 4: Call AI service to tailor resume
     let tailoredResumeText;
     try {
       console.log('[Job Application] Tailoring resume with AI service...');
@@ -167,29 +181,18 @@ router.post('/apply-job', authenticateToken, async (req, res) => {
       });
     }
 
-    // Step 4: Save tailored resume to uploads/tailored directory
-    const tailoredDir = path.join(process.cwd(), 'backend', 'uploads', 'tailored');
-    
-    // Ensure tailored directory exists
-    if (!fs.existsSync(tailoredDir)) {
-      fs.mkdirSync(tailoredDir, { recursive: true });
-    }
-
-    const timestamp = Date.now();
-    const tailoredFileName = `${userId}_${timestamp}_tailored.txt`;
-    const tailoredFilePath = path.join(tailoredDir, tailoredFileName);
-    const relativeTailoredPath = path.join('backend', 'uploads', 'tailored', tailoredFileName);
-
+    // Step 5: Update the existing resume file in place (saves space)
     try {
-      fs.writeFileSync(tailoredFilePath, tailoredResumeText, 'utf-8');
+      await updateResumeContent(resumePath, tailoredResumeText);
+      console.log('[Job Application] Resume updated in place');
     } catch (error) {
       return res.status(500).json({
         error: 'File Error',
-        message: `Failed to save tailored resume: ${error.message}`
+        message: `Failed to update resume file: ${error.message}`
       });
     }
 
-    // Step 5: Prepare user data for auto-apply
+    // Step 6: Prepare user data for auto-apply
     let profileData = {};
     if (user.profile_data) {
       try {
@@ -207,11 +210,11 @@ router.post('/apply-job', authenticateToken, async (req, res) => {
       ...profileData
     };
 
-    // Step 6: Call auto-apply service to submit application
+    // Step 7: Call auto-apply service to submit application (using updated resume)
     let applyResult;
     try {
       console.log('[Job Application] Attempting to auto-apply to job...');
-      applyResult = await autoApply(jobUrl, userData, tailoredFilePath);
+      applyResult = await autoApply(jobUrl, userData, resumePath);
       console.log(`[Job Application] Auto-apply result: ${applyResult.success ? 'Success' : 'Failed'} - ${applyResult.message}`);
     } catch (error) {
       console.error('[Job Application] Auto-apply failed:', error.message);
@@ -374,6 +377,146 @@ router.post('/apply-job', authenticateToken, async (req, res) => {
       error: 'Server Error',
       message: userMessage,
       details: details
+    });
+  }
+});
+
+/**
+ * POST /scrape-linkedin
+ * Scrape LinkedIn job and generate PDF report with skill analysis
+ */
+router.post('/scrape-linkedin',
+  authenticateToken,
+  sanitizeRequestBody,
+  validateJobUrlMiddleware,
+  async (req, res) => {
+  try {
+    const { jobUrl } = req.body;
+    const userId = req.user.userId;
+
+    // Validate LinkedIn URL
+    if (!jobUrl.toLowerCase().includes('linkedin.com')) {
+      return res.status(400).json({
+        error: 'Invalid URL',
+        message: 'Please provide a valid LinkedIn job URL'
+      });
+    }
+
+    // Get user's resume for skill comparison
+    const user = db.prepare(`
+      SELECT resume_path
+      FROM users
+      WHERE id = ?
+    `).get(userId);
+
+    let userResume = '';
+    if (user && user.resume_path) {
+      const resumePath = path.resolve(process.cwd(), user.resume_path);
+      if (fs.existsSync(resumePath)) {
+        try {
+          userResume = fs.readFileSync(resumePath, 'utf-8');
+        } catch (error) {
+          console.warn('Could not read user resume:', error.message);
+        }
+      }
+    }
+
+    // Scrape LinkedIn job and generate PDF
+    console.log(`[LinkedIn Scraper] Scraping job from: ${jobUrl}`);
+    const jobData = await scrapeLinkedInJob(jobUrl, userResume);
+    console.log(`[LinkedIn Scraper] Successfully scraped: ${jobData.title} at ${jobData.company}`);
+
+    // Return job data and PDF path
+    res.json({
+      message: 'LinkedIn job scraped successfully',
+      jobData: {
+        title: jobData.title,
+        company: jobData.company,
+        location: jobData.location,
+        description: jobData.description,
+        requiredSkills: jobData.requiredSkills,
+        missingSkills: jobData.missingSkills,
+        platform: jobData.platform,
+        url: jobData.url
+      },
+      pdfPath: jobData.pdfPath,
+      pdfUrl: `/api/job/download-report/${path.basename(jobData.pdfPath)}`
+    });
+
+  } catch (error) {
+    console.error('[LinkedIn Scraper] Error:', error.message);
+    logApiError(error, req, {
+      endpoint: '/scrape-linkedin',
+      jobUrl: req.body?.jobUrl
+    });
+
+    let statusCode = 500;
+    let details = 'Please verify the LinkedIn job URL is correct and accessible.';
+
+    if (error.message.includes('Timeout')) {
+      statusCode = 504;
+      details = 'The LinkedIn page took too long to load. Please try again.';
+    } else if (error.message.includes('Network error')) {
+      statusCode = 503;
+      details = 'Unable to reach LinkedIn. Please check your internet connection.';
+    }
+
+    res.status(statusCode).json({
+      error: 'LinkedIn Scraper Error',
+      message: error.message,
+      details
+    });
+  }
+});
+
+/**
+ * GET /download-report/:filename
+ * Download generated PDF report
+ */
+router.get('/download-report/:filename', authenticateToken, (req, res) => {
+  try {
+    const { filename } = req.params;
+    const reportsDir = path.join(process.cwd(), 'backend', 'uploads', 'reports');
+    const filepath = path.join(reportsDir, filename);
+
+    // Security check: ensure filename doesn't contain path traversal
+    if (filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
+      return res.status(400).json({
+        error: 'Invalid filename',
+        message: 'Filename contains invalid characters'
+      });
+    }
+
+    // Check if file exists
+    if (!fs.existsSync(filepath)) {
+      return res.status(404).json({
+        error: 'File not found',
+        message: 'The requested report does not exist'
+      });
+    }
+
+    // Send file
+    res.download(filepath, filename, (error) => {
+      if (error) {
+        console.error('Error downloading file:', error);
+        if (!res.headersSent) {
+          res.status(500).json({
+            error: 'Download Error',
+            message: 'Failed to download report'
+          });
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('Download report error:', error);
+    logApiError(error, req, {
+      endpoint: '/download-report'
+    });
+
+    res.status(500).json({
+      error: 'Server Error',
+      message: 'Failed to download report'
     });
   }
 });

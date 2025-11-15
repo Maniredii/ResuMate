@@ -2,6 +2,10 @@ import express from 'express';
 import { authenticateToken } from '../middleware/auth.js';
 import db from '../config/database.js';
 import { logApiError } from '../utils/logger.js';
+import { 
+  validateRequiredFields, 
+  sanitizeRequestBody 
+} from '../middleware/validation.js';
 
 const router = express.Router();
 
@@ -69,7 +73,11 @@ router.get('/get-user', authenticateToken, (req, res) => {
  * Update authenticated user's profile data
  * Requires authentication middleware
  */
-router.put('/update-profile', authenticateToken, (req, res) => {
+router.put('/update-profile', 
+  authenticateToken, 
+  sanitizeRequestBody,
+  validateRequiredFields(['name']),
+  (req, res) => {
   try {
     const userId = req.user.userId;
     const { name, phone, location, skills, ai_provider } = req.body;

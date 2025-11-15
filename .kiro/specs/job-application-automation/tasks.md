@@ -562,14 +562,29 @@
   - Create logs directory for persistent error logs
   - _Requirements: 8.5_
 
-- [ ]* 23. Add input validation and sanitization
+- [x] 23. Add input validation and sanitization
+
+
+
+
+
+
+
+
+
   - Validate email format on backend
   - Sanitize file names to prevent path traversal
   - Validate job URLs before scraping
   - Add request body validation middleware
   - _Requirements: 1.1, 2.5, 3.1_
 
-- [ ]* 24. Implement database backup functionality
+- [x] 24. Implement database backup functionality
+
+
+
+
+
+
   - Create backup script that copies database.db
   - Add timestamp to backup file names
   - Store backups in backend/backups directory

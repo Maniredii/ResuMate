@@ -148,9 +148,11 @@ async function applyToIndeed(jobUrl, userData, resumePath) {
   
   try {
     // Initialize Playwright browser (non-headless for form interaction)
+    // Opens in user's default browser (Chrome/Edge)
     browser = await chromium.launch({ 
       headless: false,
-      timeout: 30000 
+      timeout: 30000,
+      channel: 'chrome' // Use system Chrome/Edge browser
     });
     
     const context = await browser.newContext({
@@ -380,9 +382,11 @@ async function applyToWellfound(jobUrl, userData, resumePath) {
   
   try {
     // Initialize Playwright browser (non-headless for form interaction)
+    // Opens in user's default browser (Chrome/Edge)
     browser = await chromium.launch({ 
       headless: false,
-      timeout: 30000 
+      timeout: 30000,
+      channel: 'chrome' // Use system Chrome/Edge browser
     });
     
     const context = await browser.newContext({
