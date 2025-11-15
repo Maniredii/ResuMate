@@ -1,0 +1,44 @@
+{
+  "manifest_version": 3,
+  "name": "Job Application Automation",
+  "version": "1.0.0",
+  "description": "Automatically apply to jobs with AI-tailored resumes",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "tabs"
+  ],
+  "host_permissions": [
+    "https://www.indeed.com/*",
+    "https://wellfound.com/*",
+    "https://www.linkedin.com/*",
+    "http://localhost:5000/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.indeed.com/viewjob*",
+        "https://wellfound.com/jobs/*",
+        "https://www.linkedin.com/jobs/*"
+      ],
+      "js": ["content.js"],
+      "css": ["content.css"]
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

@@ -49,7 +49,7 @@ export async function scrapeJobDescription(jobUrl) {
     browser = await chromium.launch({ 
       headless: false,
       timeout: 30000,
-      channel: 'chrome' // Use system Chrome/Edge browser
+      channel: 'msedge' // Use Microsoft Edge browser
     });
     
     const context = await browser.newContext({
@@ -129,7 +129,7 @@ export async function scrapeLinkedInJob(jobUrl, userResume = '') {
     browser = await chromium.launch({ 
       headless: false,
       timeout: 30000,
-      channel: 'chrome' // Use system Chrome/Edge browser
+      channel: 'msedge' // Use Microsoft Edge browser
     });
     
     const context = await browser.newContext({
@@ -139,38 +139,143 @@ export async function scrapeLinkedInJob(jobUrl, userResume = '') {
     const page = await context.newPage();
     page.setDefaultTimeout(30000);
     
-    // Navigate to LinkedIn job page
-    await page.goto(jobUrl, { waitUntil: 'domcontentloaded' });
+    console.log('[LinkedIn Scraper] Navigating to job page...');
+    await page.goto(jobUrl, { waitUntil: 'networkidle', timeout: 30000 });
     
-    // Wait for job content to load
-    await page.waitForSelector('.jobs-description, .description__text, .show-more-less-html__markup', { 
-      timeout: 30000 
-    });
+    // Wait a bit for dynamic content to load
+    await page.waitForTimeout(3000);
+    
+    // Try to click "Show more" button if it exists
+    try {
+      const showMoreButton = await page.$('button.show-more-less-html__button');
+      if (showMoreButton) {
+        await showMoreButton.click();
+        await page.waitForTimeout(1000);
+        console.log('[LinkedIn Scraper] Clicked "Show more" button');
+      }
+    } catch (e) {
+      // Button might not exist, continue
+    }
+    
+    // Try multiple selectors for job description
+    const descriptionSelectors = [
+      '.jobs-description__content',
+      '.show-more-less-html__markup',
+      '.description__text',
+      '.jobs-description',
+      '[class*="description"]'
+    ];
+    
+    let descriptionFound = false;
+    for (const selector of descriptionSelectors) {
+      try {
+        await page.waitForSelector(selector, { timeout: 5000, state: 'visible' });
+        descriptionFound = true;
+        console.log(`[LinkedIn Scraper] Found description with selector: ${selector}`);
+        break;
+      } catch (e) {
+        continue;
+      }
+    }
+    
+    if (!descriptionFound) {
+      throw new Error('Could not find job description element on page');
+    }
     
     // Extract job details
     const jobData = await page.evaluate(() => {
-      // Job title
-      const titleElement = document.querySelector('.job-details-jobs-unified-top-card__job-title, h1.t-24, .jobs-unified-top-card__job-title');
-      const title = titleElement ? titleElement.textContent.trim() : 'N/A';
+      // Job title - try multiple selectors
+      const titleSelectors = [
+        '.job-details-jobs-unified-top-card__job-title',
+        '.jobs-unified-top-card__job-title',
+        'h1.t-24',
+        'h1',
+        '[class*="job-title"]'
+      ];
       
-      // Company name
-      const companyElement = document.querySelector('.job-details-jobs-unified-top-card__company-name, .jobs-unified-top-card__company-name, a.ember-view.t-black');
-      const company = companyElement ? companyElement.textContent.trim() : 'N/A';
+      let title = 'N/A';
+      for (const selector of titleSelectors) {
+        const element = document.querySelector(selector);
+        if (element && element.textContent.trim()) {
+          title = element.textContent.trim();
+          break;
+        }
+      }
       
-      // Job description
-      const descElement = document.querySelector('.jobs-description, .description__text, .show-more-less-html__markup');
-      const description = descElement ? descElement.textContent.trim() : '';
+      // Company name - try multiple selectors
+      const companySelectors = [
+        '.job-details-jobs-unified-top-card__company-name',
+        '.jobs-unified-top-card__company-name',
+        'a.ember-view.t-black',
+        '[class*="company-name"]',
+        'a[href*="/company/"]'
+      ];
       
-      // Location
-      const locationElement = document.querySelector('.job-details-jobs-unified-top-card__bullet, .jobs-unified-top-card__bullet');
-      const location = locationElement ? locationElement.textContent.trim() : 'N/A';
+      let company = 'N/A';
+      for (const selector of companySelectors) {
+        const element = document.querySelector(selector);
+        if (element && element.textContent.trim()) {
+          company = element.textContent.trim();
+          break;
+        }
+      }
+      
+      // Job description - try multiple selectors
+      const descriptionSelectors = [
+        '.jobs-description__content',
+        '.show-more-less-html__markup',
+        '.description__text',
+        '.jobs-description',
+        '[class*="description"]'
+      ];
+      
+      let description = '';
+      for (const selector of descriptionSelectors) {
+        const element = document.querySelector(selector);
+        if (element) {
+          // Get text content, preserving line breaks
+          description = element.innerText || element.textContent;
+          if (description && description.trim()) {
+            break;
+          }
+        }
+      }
+      
+      // Location - try multiple selectors
+      const locationSelectors = [
+        '.job-details-jobs-unified-top-card__bullet',
+        '.jobs-unified-top-card__bullet',
+        '[class*="location"]',
+        '.topcard__flavor--bullet'
+      ];
+      
+      let location = 'N/A';
+      for (const selector of locationSelectors) {
+        const element = document.querySelector(selector);
+        if (element && element.textContent.trim()) {
+          location = element.textContent.trim();
+          break;
+        }
+      }
+      
+      // Clean up description
+      description = description
+        .replace(/\s+/g, ' ')  // Replace multiple spaces with single space
+        .replace(/\n\s*\n/g, '\n')  // Remove empty lines
+        .trim();
       
       return { title, company, description, location };
     });
     
-    if (!jobData.description) {
-      throw new Error('Could not extract job description from LinkedIn page');
+    if (!jobData.description || jobData.description.length < 50) {
+      throw new Error('Job description is too short or empty');
     }
+    
+    console.log(`[LinkedIn Scraper] Successfully extracted job data`);
+    console.log(`  Title: ${jobData.title}`);
+    console.log(`  Company: ${jobData.company}`);
+    console.log(`  Location: ${jobData.location}`);
+    console.log(`  Description length: ${jobData.description.length} characters`);
     
     // Extract skills from job description using AI
     const { extractSkills } = await import('./ai.service.js');

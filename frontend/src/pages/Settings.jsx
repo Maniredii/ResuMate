@@ -159,21 +159,81 @@ const Settings = () => {
 
           <div className="mb-4 pb-4 border-b border-gray-200">
             <label className="block text-sm font-medium text-gray-700 mb-1">Resume Status</label>
-            <div className="flex items-center">
-              {user?.resume_path ? (
-                <>
-                  <svg className="w-5 h-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span className="text-green-600 font-medium">Resume uploaded</span>
-                </>
-              ) : (
-                <>
-                  <svg className="w-5 h-5 text-gray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                  <span className="text-gray-600">No resume uploaded</span>
-                </>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                {user?.resume_path ? (
+                  <>
+                    <svg className="w-5 h-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span className="text-green-600 font-medium">Resume uploaded</span>
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-5 h-5 text-gray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    <span className="text-gray-600">No resume uploaded</span>
+                  </>
+                )}
+              </div>
+              {user?.resume_path && (
+                <div className="flex gap-2">
+                  <button
+                    onClick={async () => {
+                      try {
+                        const response = await fetch('http://localhost:5000/api/upload/view-resume', {
+                          headers: {
+                            'Authorization': `Bearer ${localStorage.getItem('token')}`
+                          }
+                        });
+                        if (!response.ok) {
+                          throw new Error('Failed to fetch resume');
+                        }
+                        const blob = await response.blob();
+                        const url = window.URL.createObjectURL(blob);
+                        window.open(url, '_blank');
+                        // Clean up after a delay
+                        setTimeout(() => window.URL.revokeObjectURL(url), 100);
+                      } catch (error) {
+                        console.error('View failed:', error);
+                        alert('Failed to view resume. Please try again.');
+                      }
+                    }}
+                    className="text-sm bg-blue-100 text-blue-700 px-3 py-1 rounded hover:bg-blue-200 transition"
+                  >
+                    View
+                  </button>
+                  <button
+                    onClick={async () => {
+                      try {
+                        const response = await fetch('http://localhost:5000/api/upload/download-resume', {
+                          headers: {
+                            'Authorization': `Bearer ${localStorage.getItem('token')}`
+                          }
+                        });
+                        if (!response.ok) {
+                          throw new Error('Failed to download resume');
+                        }
+                        const blob = await response.blob();
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = 'resume.docx';
+                        document.body.appendChild(a);
+                        a.click();
+                        window.URL.revokeObjectURL(url);
+                        document.body.removeChild(a);
+                      } catch (error) {
+                        console.error('Download failed:', error);
+                        alert('Failed to download resume. Please try again.');
+                      }
+                    }}
+                    className="text-sm bg-green-100 text-green-700 px-3 py-1 rounded hover:bg-green-200 transition"
+                  >
+                    Download
+                  </button>
+                </div>
               )}
             </div>
           </div>

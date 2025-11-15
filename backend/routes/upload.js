@@ -159,4 +159,151 @@ router.get('/documents', authenticateToken, (req, res) => {
   }
 });
 
+/**
+ * GET /view-resume
+ * Download/view the authenticated user's resume
+ * Requires authentication
+ */
+router.get('/view-resume', authenticateToken, (req, res) => {
+  try {
+    const userId = req.user.userId;
+
+    // Get user's resume path from database
+    const user = db.prepare(`
+      SELECT resume_path
+      FROM users
+      WHERE id = ?
+    `).get(userId);
+
+    if (!user || !user.resume_path) {
+      return res.status(404).json({
+        error: 'Resume not found',
+        message: 'No resume has been uploaded yet'
+      });
+    }
+
+    // Import required modules
+    import('path').then(pathModule => {
+      import('fs').then(fsModule => {
+        const path = pathModule.default;
+        const fs = fsModule.default;
+
+        // Resolve the file path
+        const resumePath = path.resolve(process.cwd(), user.resume_path);
+
+        // Check if file exists
+        if (!fs.existsSync(resumePath)) {
+          return res.status(404).json({
+            error: 'File not found',
+            message: 'Resume file does not exist on server'
+          });
+        }
+
+        // Get filename for download
+        const filename = path.basename(resumePath);
+
+        // Set headers for file download
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+        res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
+
+        // Stream the file
+        const fileStream = fs.createReadStream(resumePath);
+        fileStream.pipe(res);
+
+        fileStream.on('error', (error) => {
+          console.error('Error streaming resume:', error);
+          if (!res.headersSent) {
+            res.status(500).json({
+              error: 'Stream error',
+              message: 'Failed to stream resume file'
+            });
+          }
+        });
+      });
+    });
+
+  } catch (error) {
+    console.error('Error viewing resume:', error);
+    logApiError(error, req, { 
+      endpoint: '/view-resume'
+    });
+    
+    res.status(500).json({ 
+      error: 'Server error',
+      message: error.message 
+    });
+  }
+});
+
+/**
+ * GET /download-resume
+ * Download the authenticated user's resume
+ * Requires authentication
+ */
+router.get('/download-resume', authenticateToken, (req, res) => {
+  try {
+    const userId = req.user.userId;
+
+    // Get user's resume path from database
+    const user = db.prepare(`
+      SELECT resume_path
+      FROM users
+      WHERE id = ?
+    `).get(userId);
+
+    if (!user || !user.resume_path) {
+      return res.status(404).json({
+        error: 'Resume not found',
+        message: 'No resume has been uploaded yet'
+      });
+    }
+
+    // Import required modules
+    import('path').then(pathModule => {
+      import('fs').then(fsModule => {
+        const path = pathModule.default;
+        const fs = fsModule.default;
+
+        // Resolve the file path
+        const resumePath = path.resolve(process.cwd(), user.resume_path);
+
+        // Check if file exists
+        if (!fs.existsSync(resumePath)) {
+          return res.status(404).json({
+            error: 'File not found',
+            message: 'Resume file does not exist on server'
+          });
+        }
+
+        // Get filename for download
+        const filename = path.basename(resumePath);
+
+        // Send file as download
+        res.download(resumePath, filename, (error) => {
+          if (error) {
+            console.error('Error downloading resume:', error);
+            if (!res.headersSent) {
+              res.status(500).json({
+                error: 'Download error',
+                message: 'Failed to download resume file'
+              });
+            }
+          }
+        });
+      });
+    });
+
+  } catch (error) {
+    console.error('Error downloading resume:', error);
+    logApiError(error, req, { 
+      endpoint: '/download-resume'
+    });
+    
+    res.status(500).json({ 
+      error: 'Server error',
+      message: error.message 
+    });
+  }
+});
+
 export default router;

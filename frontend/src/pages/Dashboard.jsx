@@ -97,9 +97,67 @@ const Dashboard = () => {
             <p className="text-2xl font-bold text-gray-800 mb-2">
               {hasResume ? 'Uploaded' : 'Not Uploaded'}
             </p>
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-600 mb-3">
               {hasResume ? 'Resume is ready for applications' : 'Upload your resume to get started'}
             </p>
+            {hasResume && (
+              <div className="flex gap-2 mt-3">
+                <button
+                  onClick={async () => {
+                    try {
+                      const response = await fetch('http://localhost:5000/api/upload/view-resume', {
+                        headers: {
+                          'Authorization': `Bearer ${localStorage.getItem('token')}`
+                        }
+                      });
+                      if (!response.ok) {
+                        throw new Error('Failed to fetch resume');
+                      }
+                      const blob = await response.blob();
+                      const url = window.URL.createObjectURL(blob);
+                      window.open(url, '_blank');
+                      // Clean up after a delay
+                      setTimeout(() => window.URL.revokeObjectURL(url), 100);
+                    } catch (error) {
+                      console.error('View failed:', error);
+                      alert('Failed to view resume. Please try again.');
+                    }
+                  }}
+                  className="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded hover:bg-blue-200 transition"
+                >
+                  View Resume
+                </button>
+                <button
+                  onClick={async () => {
+                    try {
+                      const response = await fetch('http://localhost:5000/api/upload/download-resume', {
+                        headers: {
+                          'Authorization': `Bearer ${localStorage.getItem('token')}`
+                        }
+                      });
+                      if (!response.ok) {
+                        throw new Error('Failed to download resume');
+                      }
+                      const blob = await response.blob();
+                      const url = window.URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = 'resume.docx';
+                      document.body.appendChild(a);
+                      a.click();
+                      window.URL.revokeObjectURL(url);
+                      document.body.removeChild(a);
+                    } catch (error) {
+                      console.error('Download failed:', error);
+                      alert('Failed to download resume. Please try again.');
+                    }
+                  }}
+                  className="text-xs bg-green-100 text-green-700 px-3 py-1 rounded hover:bg-green-200 transition"
+                >
+                  Download
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Applications Count Card */}

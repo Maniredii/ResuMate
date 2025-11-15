@@ -73,6 +73,11 @@ export const uploadAPI = {
     })
   },
   getDocuments: () => api.get('/upload/documents'),
+  viewResume: () => {
+    const token = localStorage.getItem('token')
+    return `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/upload/view-resume?token=${token}`
+  },
+  downloadResume: () => api.get('/upload/download-resume', { responseType: 'blob' }),
 }
 
 export const jobAPI = {

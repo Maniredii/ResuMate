@@ -113,6 +113,36 @@ router.post('/apply-job',
       });
     }
 
+    // Step 1.5: Extract skills from job description and update user profile
+    try {
+      console.log('[Job Application] Extracting required skills from job description...');
+      const { extractSkills } = await import('../services/ai.service.js');
+      const requiredSkills = await extractSkills(jobData.description);
+      console.log(`[Job Application] Extracted ${requiredSkills.length} skills:`, requiredSkills);
+      
+      // Get current profile data
+      let profileData = {};
+      if (user.profile_data) {
+        try {
+          profileData = JSON.parse(user.profile_data);
+        } catch (e) {
+          console.warn('[Job Application] Could not parse profile_data');
+        }
+      }
+      
+      // Update skills in profile to match job requirements
+      profileData.skills = requiredSkills;
+      
+      // Update user profile in database
+      const updateStmt = db.prepare('UPDATE users SET profile_data = ? WHERE id = ?');
+      updateStmt.run(JSON.stringify(profileData), userId);
+      
+      console.log('[Job Application] Updated user profile with job-matching skills');
+    } catch (error) {
+      console.warn('[Job Application] Could not extract/update skills:', error.message);
+      // Continue anyway - this is not critical
+    }
+
     // Step 2: Create backup of original resume (first time only)
     try {
       await createResumeBackup(resumePath);
