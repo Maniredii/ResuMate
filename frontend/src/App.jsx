@@ -1,10 +1,10 @@
-import React from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Navbar from './components/Navbar'
 import ProtectedRoute from './components/ProtectedRoute'
 import Register from './pages/Register'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
+import UploadResume from './pages/UploadResume'
 import ApplyJob from './pages/ApplyJob'
 import ApplicationHistory from './pages/ApplicationHistory'
 import Settings from './pages/Settings'
@@ -30,14 +30,11 @@ function App() {
             }
           />
           
-          {/* Placeholder routes for other pages */}
           <Route
             path="/upload-resume"
             element={
               <ProtectedRoute>
-                <div className="container mx-auto px-4 py-8">
-                  <h1 className="text-2xl font-bold">Upload Resume (Coming Soon)</h1>
-                </div>
+                <UploadResume />
               </ProtectedRoute>
             }
           />

@@ -494,7 +494,11 @@
   - Style with Tailwind CSS form components
   - _Requirements: 9.3_
 
-- [ ] 18. Set up React Router and App component
+- [x] 18. Set up React Router and App component
+
+
+
+
   - Create src/App.jsx with BrowserRouter
   - Define routes for all pages: /, /register, /login, /dashboard, /upload-resume, /apply-job, /history, /settings
   - Wrap protected routes with ProtectedRoute component
