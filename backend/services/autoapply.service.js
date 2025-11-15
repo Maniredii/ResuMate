@@ -1,6 +1,7 @@
 import { chromium } from 'playwright';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { logAutomationError } from '../utils/logger.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -120,6 +121,14 @@ export async function autoApply(jobUrl, userData, resumePath) {
       return await applyToWellfound(jobUrl, userData, resumePath);
     }
   } catch (error) {
+    // Log automation error
+    logAutomationError(error, {
+      platform: platform,
+      jobUrl: jobUrl,
+      step: 'autoApply',
+      errorType: 'AUTO_APPLY_ERROR'
+    });
+    
     return {
       success: false,
       message: `Auto-apply failed: ${error.message}`
@@ -338,6 +347,15 @@ async function applyToIndeed(jobUrl, userData, resumePath) {
     }
     
   } catch (error) {
+    // Log Indeed auto-apply error
+    logAutomationError(error, {
+      platform: 'indeed',
+      jobUrl: jobUrl,
+      step: 'applyToIndeed',
+      errorType: 'INDEED_AUTO_APPLY_ERROR',
+      userData: { name: userData.name, email: userData.email }
+    });
+    
     return {
       success: false,
       message: `Indeed application failed: ${error.message}`
@@ -560,6 +578,15 @@ async function applyToWellfound(jobUrl, userData, resumePath) {
     }
     
   } catch (error) {
+    // Log Wellfound auto-apply error
+    logAutomationError(error, {
+      platform: 'wellfound',
+      jobUrl: jobUrl,
+      step: 'applyToWellfound',
+      errorType: 'WELLFOUND_AUTO_APPLY_ERROR',
+      userData: { name: userData.name, email: userData.email }
+    });
+    
     return {
       success: false,
       message: `Wellfound application failed: ${error.message}`

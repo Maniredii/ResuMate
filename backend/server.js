@@ -6,6 +6,7 @@ import authRoutes from './routes/auth.js';
 import userRoutes from './routes/user.js';
 import uploadRoutes from './routes/upload.js';
 import jobRoutes from './routes/job.js';
+import { logApiError, logError } from './utils/logger.js';
 
 // Load environment variables
 dotenv.config();
@@ -45,6 +46,12 @@ app.use((req, res) => {
 // Global error handling middleware for uncaught errors
 app.use((err, req, res, next) => {
   console.error('Uncaught error:', err);
+  
+  // Log all API errors
+  logApiError(err, req, {
+    errorType: 'UNCAUGHT_ERROR',
+    errorCode: err.code
+  });
   
   // Handle Multer errors
   if (err.code === 'LIMIT_FILE_SIZE') {
@@ -87,9 +94,14 @@ try {
     console.log(`✓ API endpoints available at http://localhost:${PORT}/api`);
     console.log(`✓ Environment: ${process.env.NODE_ENV || 'development'}`);
     console.log(`✓ AI Provider: ${process.env.AI_PROVIDER || 'not configured'}`);
+    console.log(`✓ Logs directory: backend/logs/`);
   });
 } catch (error) {
   console.error('Failed to start server:', error);
+  logError(error, {
+    context: 'server_startup',
+    port: PORT
+  });
   process.exit(1);
 }
 

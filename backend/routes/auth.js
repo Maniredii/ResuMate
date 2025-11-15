@@ -2,6 +2,7 @@ import express from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import db from '../config/database.js';
+import { logApiError } from '../utils/logger.js';
 
 const router = express.Router();
 
@@ -64,6 +65,11 @@ router.post('/register', async (req, res) => {
 
   } catch (error) {
     console.error('Registration error:', error);
+    logApiError(error, req, { 
+      endpoint: '/register',
+      email: req.body?.email 
+    });
+    
     res.status(500).json({
       error: 'Server Error',
       message: 'Failed to register user'
@@ -128,6 +134,11 @@ router.post('/login', async (req, res) => {
 
   } catch (error) {
     console.error('Login error:', error);
+    logApiError(error, req, { 
+      endpoint: '/login',
+      email: req.body?.email 
+    });
+    
     res.status(500).json({
       error: 'Server Error',
       message: 'Failed to login'

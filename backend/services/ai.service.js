@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { logAiError } from '../utils/logger.js';
 
 /**
  * AI Service for resume tailoring and skill extraction
@@ -174,6 +175,15 @@ async function makeAIRequest(messages, providerName = null) {
     
     return response.data.choices[0].message.content;
   } catch (error) {
+    // Log AI service error with provider information
+    logAiError(error, name, {
+      model: config.model,
+      operation: 'makeAIRequest',
+      errorType: error.response ? 'API_RESPONSE_ERROR' : error.request ? 'NO_RESPONSE' : 'REQUEST_ERROR',
+      statusCode: error.response?.status,
+      responseData: error.response?.data
+    });
+
     if (error.response) {
       const errorMessage = error.response.data.error?.message || 
                           error.response.data.message || 
@@ -228,6 +238,14 @@ Tailored Resume:`
     // Clean up the response - remove any markdown formatting or extra whitespace
     return tailoredResume.trim();
   } catch (error) {
+    // Log AI error with context
+    const { name } = getProvider();
+    logAiError(error, name, {
+      operation: 'tailorResume',
+      hasJobDescription: !!jobDescription,
+      hasResume: !!originalResume
+    });
+    
     // Provide a fallback message if AI service fails
     throw new Error(`Failed to tailor resume: ${error.message}`);
   }
@@ -293,6 +311,13 @@ Example format: ["JavaScript", "React", "Node.js", "Team Leadership", "Agile Met
       return [];
     }
   } catch (error) {
+    // Log AI error with context
+    const { name } = getProvider();
+    logAiError(error, name, {
+      operation: 'extractSkills',
+      hasJobDescription: !!jobDescription
+    });
+    
     throw new Error(`Failed to extract skills: ${error.message}`);
   }
 }

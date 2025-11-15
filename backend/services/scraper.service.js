@@ -1,4 +1,5 @@
 import { chromium } from 'playwright';
+import { logAutomationError } from '../utils/logger.js';
 
 /**
  * Scrapes job description from a given job URL
@@ -47,6 +48,15 @@ export async function scrapeJobDescription(jobUrl) {
     return jobData;
     
   } catch (error) {
+    // Log automation error with context
+    logAutomationError(error, {
+      platform: detectPlatform(jobUrl) || 'unknown',
+      jobUrl: jobUrl,
+      step: 'scrapeJobDescription',
+      errorType: error.message.includes('Timeout') ? 'TIMEOUT' : 
+                 error.message.includes('net::') ? 'NETWORK_ERROR' : 'SCRAPING_ERROR'
+    });
+
     // Return descriptive error messages
     if (error.message.includes('Timeout')) {
       throw new Error(`Failed to load job page within 30 seconds: ${error.message}`);
@@ -128,6 +138,14 @@ async function scrapeIndeed(page, jobUrl) {
     };
     
   } catch (error) {
+    // Log Indeed-specific scraping error
+    logAutomationError(error, {
+      platform: 'indeed',
+      jobUrl: jobUrl,
+      step: 'scrapeIndeed',
+      errorType: 'INDEED_SCRAPING_ERROR'
+    });
+    
     throw new Error(`Indeed scraping failed: ${error.message}`);
   }
 }
@@ -180,6 +198,14 @@ async function scrapeWellfound(page, jobUrl) {
     };
     
   } catch (error) {
+    // Log Wellfound-specific scraping error
+    logAutomationError(error, {
+      platform: 'wellfound',
+      jobUrl: jobUrl,
+      step: 'scrapeWellfound',
+      errorType: 'WELLFOUND_SCRAPING_ERROR'
+    });
+    
     throw new Error(`Wellfound scraping failed: ${error.message}`);
   }
 }

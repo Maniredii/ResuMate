@@ -1,6 +1,7 @@
 import express from 'express';
 import { authenticateToken } from '../middleware/auth.js';
 import db from '../config/database.js';
+import { logApiError } from '../utils/logger.js';
 
 const router = express.Router();
 
@@ -52,6 +53,10 @@ router.get('/get-user', authenticateToken, (req, res) => {
 
   } catch (error) {
     console.error('Get user error:', error);
+    logApiError(error, req, {
+      endpoint: '/get-user'
+    });
+    
     res.status(500).json({
       error: 'Server Error',
       message: 'Failed to fetch user profile'
@@ -129,6 +134,10 @@ router.put('/update-profile', authenticateToken, (req, res) => {
 
   } catch (error) {
     console.error('Update profile error:', error);
+    logApiError(error, req, {
+      endpoint: '/update-profile'
+    });
+    
     res.status(500).json({
       error: 'Server Error',
       message: 'Failed to update profile'

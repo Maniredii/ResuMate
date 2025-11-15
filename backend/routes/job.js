@@ -7,6 +7,7 @@ import db from '../config/database.js';
 import { scrapeJobDescription } from '../services/scraper.service.js';
 import { tailorResume } from '../services/ai.service.js';
 import { autoApply } from '../services/autoapply.service.js';
+import { logApiError } from '../utils/logger.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -74,6 +75,13 @@ router.post('/apply-job', authenticateToken, async (req, res) => {
     } catch (error) {
       console.error('[Job Application] Scraper failed:', error.message);
       
+      // Log scraper error
+      logApiError(error, req, {
+        endpoint: '/apply-job',
+        step: 'scrapeJobDescription',
+        jobUrl: jobUrl
+      });
+      
       // Determine appropriate status code based on error type
       let statusCode = 500;
       let userMessage = error.message;
@@ -119,6 +127,13 @@ router.post('/apply-job', authenticateToken, async (req, res) => {
       console.log('[Job Application] Resume tailored successfully');
     } catch (error) {
       console.error('[Job Application] AI service failed:', error.message);
+      
+      // Log AI service error
+      logApiError(error, req, {
+        endpoint: '/apply-job',
+        step: 'tailorResume',
+        jobUrl: jobUrl
+      });
       
       // Determine appropriate status code and user-friendly message
       let statusCode = 500;
@@ -201,6 +216,13 @@ router.post('/apply-job', authenticateToken, async (req, res) => {
     } catch (error) {
       console.error('[Job Application] Auto-apply failed:', error.message);
       
+      // Log auto-apply error
+      logApiError(error, req, {
+        endpoint: '/apply-job',
+        step: 'autoApply',
+        jobUrl: jobUrl
+      });
+      
       // Determine user-friendly error message
       let userMessage = error.message;
       let details = 'The resume was tailored successfully but the automatic submission failed. You may need to apply manually using the tailored resume.';
@@ -240,6 +262,11 @@ router.post('/apply-job', authenticateToken, async (req, res) => {
         console.log('[Job Application] Error logged to database with status "error"');
       } catch (dbError) {
         console.error('[Job Application] Failed to log error to database:', dbError.message);
+        logApiError(dbError, req, {
+          endpoint: '/apply-job',
+          step: 'logErrorToDatabase',
+          jobUrl: jobUrl
+        });
       }
 
       return res.status(statusCode).json({
@@ -297,6 +324,13 @@ router.post('/apply-job', authenticateToken, async (req, res) => {
     } catch (dbError) {
       console.error('[Job Application] Database error while saving application:', dbError.message);
       
+      // Log database error
+      logApiError(dbError, req, {
+        endpoint: '/apply-job',
+        step: 'saveApplicationToDatabase',
+        jobUrl: jobUrl
+      });
+      
       // Even if database save fails, the application may have been submitted
       return res.status(500).json({
         error: 'Database Error',
@@ -313,6 +347,13 @@ router.post('/apply-job', authenticateToken, async (req, res) => {
     
     // Log detailed error for debugging
     console.error('Error stack:', error.stack);
+    
+    // Log unexpected workflow error
+    logApiError(error, req, {
+      endpoint: '/apply-job',
+      step: 'unexpectedError',
+      jobUrl: req.body?.jobUrl
+    });
     
     // Determine if this is a database error
     let statusCode = 500;
@@ -363,6 +404,10 @@ router.get('/application-history', authenticateToken, (req, res) => {
 
   } catch (error) {
     console.error('Get application history error:', error);
+    logApiError(error, req, {
+      endpoint: '/application-history'
+    });
+    
     res.status(500).json({
       error: 'Server Error',
       message: 'Failed to fetch application history'

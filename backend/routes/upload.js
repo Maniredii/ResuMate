@@ -2,6 +2,7 @@ import express from 'express';
 import { uploadResume, uploadDocument } from '../config/multer.js';
 import { authenticateToken } from '../middleware/auth.js';
 import db from '../config/database.js';
+import { logApiError } from '../utils/logger.js';
 
 const router = express.Router();
 
@@ -47,6 +48,11 @@ router.post('/upload-resume', authenticateToken, uploadResume.single('resume'), 
     });
   } catch (error) {
     console.error('Error uploading resume:', error);
+    logApiError(error, req, { 
+      endpoint: '/upload-resume',
+      fileName: req.file?.originalname 
+    });
+    
     res.status(500).json({ 
       error: 'Upload failed',
       message: error.message 
@@ -101,6 +107,12 @@ router.post('/upload-document', authenticateToken, uploadDocument.single('docume
     });
   } catch (error) {
     console.error('Error uploading document:', error);
+    logApiError(error, req, { 
+      endpoint: '/upload-document',
+      fileName: req.file?.originalname,
+      fileType: req.body?.fileType 
+    });
+    
     res.status(500).json({ 
       error: 'Upload failed',
       message: error.message 
@@ -136,6 +148,10 @@ router.get('/documents', authenticateToken, (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching documents:', error);
+    logApiError(error, req, { 
+      endpoint: '/documents'
+    });
+    
     res.status(500).json({ 
       error: 'Fetch failed',
       message: error.message 
