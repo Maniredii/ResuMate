@@ -7,6 +7,7 @@ import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import ApplyJob from './pages/ApplyJob'
 import ApplicationHistory from './pages/ApplicationHistory'
+import Settings from './pages/Settings'
 import { isAuthenticated } from './utils/auth'
 
 function App() {
@@ -60,9 +61,7 @@ function App() {
             path="/settings"
             element={
               <ProtectedRoute>
-                <div className="container mx-auto px-4 py-8">
-                  <h1 className="text-2xl font-bold">Settings (Coming Soon)</h1>
-                </div>
+                <Settings />
               </ProtectedRoute>
             }
           />

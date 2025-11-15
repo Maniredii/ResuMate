@@ -476,7 +476,16 @@
   - Style with Tailwind CSS table components
   - _Requirements: 9.3, 9.4_
 
-- [ ] 17. Implement frontend settings page
+- [x] 17. Implement frontend settings page
+
+
+
+
+
+
+
+
+
   - Create src/pages/Settings.jsx
   - Display user profile information
   - Add form to update profile data (phone, location, skills)
