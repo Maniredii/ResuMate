@@ -1,17 +1,91 @@
 import React from 'react'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import Navbar from './components/Navbar'
+import ProtectedRoute from './components/ProtectedRoute'
+import Register from './pages/Register'
+import Login from './pages/Login'
+import Dashboard from './pages/Dashboard'
+import { isAuthenticated } from './utils/auth'
 
 function App() {
   return (
-    <div className="min-h-screen bg-gray-100">
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="text-4xl font-bold text-center text-blue-600 mb-4">
-          Job Application Automation
-        </h1>
-        <p className="text-center text-gray-600">
-          Frontend initialized with Vite, React, Tailwind CSS, and React Router
-        </p>
+    <BrowserRouter>
+      <div className="min-h-screen bg-gray-50">
+        <Navbar />
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/register" element={<Register />} />
+          <Route path="/login" element={<Login />} />
+          
+          {/* Protected Routes */}
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          
+          {/* Placeholder routes for other pages */}
+          <Route
+            path="/upload-resume"
+            element={
+              <ProtectedRoute>
+                <div className="container mx-auto px-4 py-8">
+                  <h1 className="text-2xl font-bold">Upload Resume (Coming Soon)</h1>
+                </div>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/apply-job"
+            element={
+              <ProtectedRoute>
+                <div className="container mx-auto px-4 py-8">
+                  <h1 className="text-2xl font-bold">Apply to Job (Coming Soon)</h1>
+                </div>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/history"
+            element={
+              <ProtectedRoute>
+                <div className="container mx-auto px-4 py-8">
+                  <h1 className="text-2xl font-bold">Application History (Coming Soon)</h1>
+                </div>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <ProtectedRoute>
+                <div className="container mx-auto px-4 py-8">
+                  <h1 className="text-2xl font-bold">Settings (Coming Soon)</h1>
+                </div>
+              </ProtectedRoute>
+            }
+          />
+          
+          {/* Default Route */}
+          <Route
+            path="/"
+            element={
+              isAuthenticated() ? (
+                <Navigate to="/dashboard" replace />
+              ) : (
+                <Navigate to="/login" replace />
+              )
+            }
+          />
+          
+          {/* Catch all - redirect to home */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
       </div>
-    </div>
+    </BrowserRouter>
   )
 }
 

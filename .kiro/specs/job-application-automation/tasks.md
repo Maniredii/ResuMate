@@ -359,15 +359,23 @@
     - Redirect to login if not authenticated
     - _Requirements: 9.3_
 
-- [ ] 13. Implement frontend dashboard and navigation
-  - [ ] 13.1 Create Navbar component
+- [x] 13. Implement frontend dashboard and navigation
+
+
+
+
+
+  - [x] 13.1 Create Navbar component
     - Create src/components/Navbar.jsx with navigation links
     - Add logout functionality that clears token and redirects
     - Show user name when authenticated
     - Style with Tailwind CSS
     - _Requirements: 9.3_
+
   
-  - [ ] 13.2 Create Dashboard page
+  - [x] 13.2 Create Dashboard page
+
+
     - Create src/pages/Dashboard.jsx
     - Fetch user profile data on mount
     - Display user name and resume status
