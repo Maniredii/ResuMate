@@ -6,8 +6,19 @@ import { sanitizeFilename } from '../middleware/validation.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// File type validation - whitelist PDF and DOCX
-const fileFilter = (req, file, cb) => {
+// File type validation - only DOCX for resumes
+const resumeFileFilter = (req, file, cb) => {
+  const ext = path.extname(file.originalname).toLowerCase();
+  
+  if (ext === '.docx') {
+    cb(null, true);
+  } else {
+    cb(new Error('Invalid file type. Only DOCX (Word Document) files are allowed for resumes.'), false);
+  }
+};
+
+// File type validation - PDF and DOCX for documents
+const documentFileFilter = (req, file, cb) => {
   const allowedTypes = ['.pdf', '.docx'];
   const ext = path.extname(file.originalname).toLowerCase();
   
@@ -60,7 +71,7 @@ const documentStorage = multer.diskStorage({
 // Multer instances with 10MB file size limit
 export const uploadResume = multer({
   storage: resumeStorage,
-  fileFilter: fileFilter,
+  fileFilter: resumeFileFilter, // Only DOCX for resumes
   limits: {
     fileSize: 10 * 1024 * 1024 // 10MB
   }
@@ -68,7 +79,7 @@ export const uploadResume = multer({
 
 export const uploadTailored = multer({
   storage: tailoredStorage,
-  fileFilter: fileFilter,
+  fileFilter: resumeFileFilter, // Only DOCX for tailored resumes
   limits: {
     fileSize: 10 * 1024 * 1024 // 10MB
   }
@@ -76,7 +87,7 @@ export const uploadTailored = multer({
 
 export const uploadDocument = multer({
   storage: documentStorage,
-  fileFilter: fileFilter,
+  fileFilter: documentFileFilter, // PDF and DOCX for documents
   limits: {
     fileSize: 10 * 1024 * 1024 // 10MB
   }

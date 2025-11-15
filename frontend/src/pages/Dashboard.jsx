@@ -19,7 +19,7 @@ const Dashboard = () => {
 
       // Fetch user profile
       const userResponse = await userAPI.getUser()
-      setUser(userResponse.data)
+      setUser(userResponse.data.user)
 
       // Fetch application history to get count
       const historyResponse = await userAPI.getApplicationHistory()

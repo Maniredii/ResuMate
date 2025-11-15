@@ -326,41 +326,118 @@ async function generateJobReportPDF(jobData) {
  */
 async function scrapeIndeed(page, jobUrl) {
   try {
-    // Navigate to job page and wait for content
-    await page.goto(jobUrl, { waitUntil: 'domcontentloaded' });
+    console.log('[Indeed Scraper] Navigating to job page...');
+    await page.goto(jobUrl, { waitUntil: 'networkidle', timeout: 30000 });
     
-    // Wait for job description to load
-    await page.waitForSelector('.jobsearch-jobDescriptionText, #jobDescriptionText', { 
-      timeout: 30000 
-    });
+    // Wait a bit for dynamic content to load
+    await page.waitForTimeout(2000);
     
-    // Extract job title
-    const title = await page.evaluate(() => {
-      const titleElement = document.querySelector('h1.jobsearch-JobInfoHeader-title, h2.jobsearch-JobInfoHeader-title, .jobsearch-JobInfoHeader-title');
-      return titleElement ? titleElement.textContent.trim() : 'N/A';
-    });
+    // Try multiple selectors for job description
+    const descriptionSelectors = [
+      '#jobDescriptionText',
+      '.jobsearch-jobDescriptionText',
+      '[id*="jobDescriptionText"]',
+      '.jobsearch-JobComponent-description',
+      '[class*="jobsearch"][class*="description"]'
+    ];
     
-    // Extract company name
-    const company = await page.evaluate(() => {
-      const companyElement = document.querySelector('[data-company-name="true"], .jobsearch-InlineCompanyRating-companyHeader a, .jobsearch-CompanyInfoContainer a');
-      return companyElement ? companyElement.textContent.trim() : 'N/A';
-    });
-    
-    // Extract job description
-    const description = await page.evaluate(() => {
-      const descElement = document.querySelector('.jobsearch-jobDescriptionText, #jobDescriptionText');
-      return descElement ? descElement.textContent.trim() : '';
-    });
-    
-    if (!description) {
-      throw new Error('Could not extract job description from Indeed page');
+    let descriptionFound = false;
+    for (const selector of descriptionSelectors) {
+      try {
+        await page.waitForSelector(selector, { timeout: 5000, state: 'visible' });
+        descriptionFound = true;
+        console.log(`[Indeed Scraper] Found description with selector: ${selector}`);
+        break;
+      } catch (e) {
+        continue;
+      }
     }
+    
+    if (!descriptionFound) {
+      throw new Error('Could not find job description element on page');
+    }
+    
+    // Extract all job data
+    const jobData = await page.evaluate(() => {
+      // Job title - try multiple selectors
+      const titleSelectors = [
+        'h1.jobsearch-JobInfoHeader-title',
+        'h2.jobsearch-JobInfoHeader-title',
+        '.jobsearch-JobInfoHeader-title',
+        'h1[class*="jobsearch"]',
+        'h1'
+      ];
+      
+      let title = 'N/A';
+      for (const selector of titleSelectors) {
+        const element = document.querySelector(selector);
+        if (element && element.textContent.trim()) {
+          title = element.textContent.trim();
+          break;
+        }
+      }
+      
+      // Company name - try multiple selectors
+      const companySelectors = [
+        '[data-company-name="true"]',
+        '.jobsearch-InlineCompanyRating-companyHeader a',
+        '.jobsearch-CompanyInfoContainer a',
+        '[data-testid="inlineHeader-companyName"]',
+        '[class*="company"]'
+      ];
+      
+      let company = 'N/A';
+      for (const selector of companySelectors) {
+        const element = document.querySelector(selector);
+        if (element && element.textContent.trim()) {
+          company = element.textContent.trim();
+          break;
+        }
+      }
+      
+      // Job description - try multiple selectors and get full HTML content
+      const descriptionSelectors = [
+        '#jobDescriptionText',
+        '.jobsearch-jobDescriptionText',
+        '[id*="jobDescriptionText"]',
+        '.jobsearch-JobComponent-description'
+      ];
+      
+      let description = '';
+      for (const selector of descriptionSelectors) {
+        const element = document.querySelector(selector);
+        if (element) {
+          // Get text content, preserving line breaks
+          description = element.innerText || element.textContent;
+          if (description && description.trim()) {
+            break;
+          }
+        }
+      }
+      
+      // Clean up description
+      description = description
+        .replace(/\s+/g, ' ')  // Replace multiple spaces with single space
+        .replace(/\n\s*\n/g, '\n')  // Remove empty lines
+        .trim();
+      
+      return { title, company, description };
+    });
+    
+    if (!jobData.description || jobData.description.length < 50) {
+      throw new Error('Job description is too short or empty');
+    }
+    
+    console.log(`[Indeed Scraper] Successfully extracted job data`);
+    console.log(`  Title: ${jobData.title}`);
+    console.log(`  Company: ${jobData.company}`);
+    console.log(`  Description length: ${jobData.description.length} characters`);
     
     // Return structured job data
     return {
-      title,
-      company,
-      description,
+      title: jobData.title,
+      company: jobData.company,
+      description: jobData.description,
       platform: 'Indeed',
       url: jobUrl
     };
@@ -386,41 +463,119 @@ async function scrapeIndeed(page, jobUrl) {
  */
 async function scrapeWellfound(page, jobUrl) {
   try {
-    // Navigate to job page and wait for content
-    await page.goto(jobUrl, { waitUntil: 'domcontentloaded' });
+    console.log('[Wellfound Scraper] Navigating to job page...');
+    await page.goto(jobUrl, { waitUntil: 'networkidle', timeout: 30000 });
     
-    // Wait for job description to load
-    await page.waitForSelector('[data-test="JobDescription"], .job-description, .styles_description__', { 
-      timeout: 30000 
-    });
+    // Wait a bit for dynamic content to load
+    await page.waitForTimeout(2000);
     
-    // Extract job title
-    const title = await page.evaluate(() => {
-      const titleElement = document.querySelector('[data-test="JobTitle"], h1, .styles_title__');
-      return titleElement ? titleElement.textContent.trim() : 'N/A';
-    });
+    // Try multiple selectors for job description
+    const descriptionSelectors = [
+      '[data-test="JobDescription"]',
+      '.job-description',
+      '.styles_description__',
+      '[class*="description"]',
+      'div[class*="JobDescription"]'
+    ];
     
-    // Extract company name
-    const company = await page.evaluate(() => {
-      const companyElement = document.querySelector('[data-test="StartupLink"], .company-name, .styles_company__');
-      return companyElement ? companyElement.textContent.trim() : 'N/A';
-    });
-    
-    // Extract job description
-    const description = await page.evaluate(() => {
-      const descElement = document.querySelector('[data-test="JobDescription"], .job-description, .styles_description__');
-      return descElement ? descElement.textContent.trim() : '';
-    });
-    
-    if (!description) {
-      throw new Error('Could not extract job description from Wellfound page');
+    let descriptionFound = false;
+    for (const selector of descriptionSelectors) {
+      try {
+        await page.waitForSelector(selector, { timeout: 5000, state: 'visible' });
+        descriptionFound = true;
+        console.log(`[Wellfound Scraper] Found description with selector: ${selector}`);
+        break;
+      } catch (e) {
+        continue;
+      }
     }
+    
+    if (!descriptionFound) {
+      throw new Error('Could not find job description element on page');
+    }
+    
+    // Extract all job data
+    const jobData = await page.evaluate(() => {
+      // Job title - try multiple selectors
+      const titleSelectors = [
+        '[data-test="JobTitle"]',
+        'h1',
+        '.styles_title__',
+        '[class*="title"]',
+        'h2'
+      ];
+      
+      let title = 'N/A';
+      for (const selector of titleSelectors) {
+        const element = document.querySelector(selector);
+        if (element && element.textContent.trim()) {
+          title = element.textContent.trim();
+          break;
+        }
+      }
+      
+      // Company name - try multiple selectors
+      const companySelectors = [
+        '[data-test="StartupLink"]',
+        '.company-name',
+        '.styles_company__',
+        '[class*="company"]',
+        'a[href*="/company/"]'
+      ];
+      
+      let company = 'N/A';
+      for (const selector of companySelectors) {
+        const element = document.querySelector(selector);
+        if (element && element.textContent.trim()) {
+          company = element.textContent.trim();
+          break;
+        }
+      }
+      
+      // Job description - try multiple selectors
+      const descriptionSelectors = [
+        '[data-test="JobDescription"]',
+        '.job-description',
+        '.styles_description__',
+        '[class*="description"]',
+        'div[class*="JobDescription"]'
+      ];
+      
+      let description = '';
+      for (const selector of descriptionSelectors) {
+        const element = document.querySelector(selector);
+        if (element) {
+          // Get text content, preserving line breaks
+          description = element.innerText || element.textContent;
+          if (description && description.trim()) {
+            break;
+          }
+        }
+      }
+      
+      // Clean up description
+      description = description
+        .replace(/\s+/g, ' ')  // Replace multiple spaces with single space
+        .replace(/\n\s*\n/g, '\n')  // Remove empty lines
+        .trim();
+      
+      return { title, company, description };
+    });
+    
+    if (!jobData.description || jobData.description.length < 50) {
+      throw new Error('Job description is too short or empty');
+    }
+    
+    console.log(`[Wellfound Scraper] Successfully extracted job data`);
+    console.log(`  Title: ${jobData.title}`);
+    console.log(`  Company: ${jobData.company}`);
+    console.log(`  Description length: ${jobData.description.length} characters`);
     
     // Return structured job data
     return {
-      title,
-      company,
-      description,
+      title: jobData.title,
+      company: jobData.company,
+      description: jobData.description,
       platform: 'Wellfound',
       url: jobUrl
     };

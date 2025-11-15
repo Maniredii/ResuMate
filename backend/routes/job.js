@@ -259,7 +259,7 @@ router.post('/apply-job',
           userId,
           jobUrl,
           jobData.description,
-          relativeTailoredPath,
+          user.resume_path, // Use original resume path
           'error'
         );
         console.log('[Job Application] Error logged to database with status "error"');
@@ -276,11 +276,11 @@ router.post('/apply-job',
         error: 'Auto-Apply Error',
         message: `Failed to submit application: ${userMessage}`,
         details: details,
-        tailoredResumePath: relativeTailoredPath // Provide path so user can apply manually
+        resumePath: user.resume_path // Provide path so user can apply manually
       });
     }
 
-    // Step 7: Insert application record into job_applications table
+    // Step 8: Insert application record into job_applications table
     const status = applyResult.success ? 'applied' : 'error';
     
     try {
@@ -293,7 +293,7 @@ router.post('/apply-job',
         userId,
         jobUrl,
         jobData.description,
-        relativeTailoredPath,
+        user.resume_path, // Store original resume path (now contains tailored content)
         status
       );
 
@@ -304,14 +304,14 @@ router.post('/apply-job',
         WHERE id = ?
       `).get(result.lastInsertRowid);
 
-      // Step 8: Return success response with application details
+      // Step 9: Return success response with application details
       // If auto-apply failed but we got here, return 207 Multi-Status (partial success)
       const responseStatus = applyResult.success ? 201 : 207;
       
       res.status(responseStatus).json({
         message: applyResult.success 
-          ? 'Application submitted successfully' 
-          : 'Resume tailored successfully, but automatic submission failed',
+          ? 'Application submitted successfully. Your resume has been tailored and updated.' 
+          : 'Resume tailored and updated successfully, but automatic submission failed',
         application: {
           ...application,
           jobTitle: jobData.title,
@@ -320,8 +320,8 @@ router.post('/apply-job',
         },
         applyResult,
         ...(applyResult.success ? {} : {
-          details: 'Your tailored resume has been saved. You can apply manually using the tailored resume.',
-          tailoredResumePath: relativeTailoredPath
+          details: 'Your resume has been updated with tailored content. You can apply manually using the updated resume.',
+          resumePath: user.resume_path
         })
       });
     } catch (dbError) {
@@ -414,7 +414,7 @@ router.post('/scrape-linkedin',
       const resumePath = path.resolve(process.cwd(), user.resume_path);
       if (fs.existsSync(resumePath)) {
         try {
-          userResume = fs.readFileSync(resumePath, 'utf-8');
+          userResume = await readResumeContent(resumePath);
         } catch (error) {
           console.warn('Could not read user resume:', error.message);
         }
@@ -554,6 +554,61 @@ router.get('/application-history', authenticateToken, (req, res) => {
     res.status(500).json({
       error: 'Server Error',
       message: 'Failed to fetch application history'
+    });
+  }
+});
+
+/**
+ * POST /restore-original-resume
+ * Restores the original resume from backup
+ */
+router.post('/restore-original-resume', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.userId;
+
+    // Get user's resume path
+    const user = db.prepare(`
+      SELECT resume_path
+      FROM users
+      WHERE id = ?
+    `).get(userId);
+
+    if (!user || !user.resume_path) {
+      return res.status(404).json({
+        error: 'Resume Error',
+        message: 'No resume found for this user'
+      });
+    }
+
+    const resumePath = path.resolve(process.cwd(), user.resume_path);
+
+    // Import restore function
+    const { restoreOriginalResume } = await import('../services/document.service.js');
+    
+    // Restore original resume
+    const restored = await restoreOriginalResume(resumePath);
+
+    if (restored) {
+      res.json({
+        message: 'Original resume restored successfully',
+        resumePath: user.resume_path
+      });
+    } else {
+      res.status(404).json({
+        error: 'Backup Not Found',
+        message: 'No backup of the original resume was found. The current resume may already be the original.'
+      });
+    }
+
+  } catch (error) {
+    console.error('Restore resume error:', error);
+    logApiError(error, req, {
+      endpoint: '/restore-original-resume'
+    });
+
+    res.status(500).json({
+      error: 'Server Error',
+      message: `Failed to restore original resume: ${error.message}`
     });
   }
 });

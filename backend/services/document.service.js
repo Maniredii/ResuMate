@@ -115,25 +115,23 @@ export function isWordDocument(filePath) {
 }
 
 /**
- * Reads resume content (supports both .txt and .docx)
+ * Reads resume content (only supports .docx)
  * @param {string} filePath - Path to the resume file
  * @returns {Promise<string>} - Resume content
  */
 export async function readResumeContent(filePath) {
   try {
-    if (isWordDocument(filePath)) {
-      return await readWordDocument(filePath);
-    } else {
-      // Plain text file
-      return fs.readFileSync(filePath, 'utf-8');
+    if (!isWordDocument(filePath)) {
+      throw new Error('Only Word documents (.docx) are supported for resumes');
     }
+    return await readWordDocument(filePath);
   } catch (error) {
     throw new Error(`Failed to read resume: ${error.message}`);
   }
 }
 
 /**
- * Updates resume content (supports both .txt and .docx)
+ * Updates resume content (only supports .docx)
  * Overwrites the existing file
  * @param {string} filePath - Path to the resume file
  * @param {string} newContent - New content
@@ -141,13 +139,10 @@ export async function readResumeContent(filePath) {
  */
 export async function updateResumeContent(filePath, newContent) {
   try {
-    if (isWordDocument(filePath)) {
-      await updateWordDocument(filePath, newContent);
-    } else {
-      // Plain text file
-      fs.writeFileSync(filePath, newContent, 'utf-8');
-      console.log(`✓ Updated text file: ${path.basename(filePath)}`);
+    if (!isWordDocument(filePath)) {
+      throw new Error('Only Word documents (.docx) are supported for resumes');
     }
+    await updateWordDocument(filePath, newContent);
   } catch (error) {
     throw new Error(`Failed to update resume: ${error.message}`);
   }

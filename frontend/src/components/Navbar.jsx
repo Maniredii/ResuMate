@@ -17,7 +17,7 @@ const Navbar = () => {
   const fetchUserName = async () => {
     try {
       const response = await userAPI.getUser()
-      setUserName(response.data.name)
+      setUserName(response.data.user.name)
     } catch (error) {
       console.error('Failed to fetch user name:', error)
     }

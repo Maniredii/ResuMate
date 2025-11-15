@@ -49,6 +49,7 @@ export const userAPI = {
   getUser: () => api.get('/user/get-user'),
   updateProfile: (profileData) => api.put('/user/update-profile', profileData),
   getApplicationHistory: () => api.get('/job/application-history'),
+  restoreOriginalResume: () => api.post('/job/restore-original-resume'),
 }
 
 export const uploadAPI = {

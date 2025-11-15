@@ -36,15 +36,13 @@ function UploadResume() {
     }
   }
 
-  // Validate file type for resume
+  // Validate file type for resume (only DOCX)
   const validateResumeFile = (file) => {
-    const allowedTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
-    const allowedExtensions = ['.pdf', '.docx']
-    
+    const allowedType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
     const fileExtension = file.name.toLowerCase().slice(file.name.lastIndexOf('.'))
     
-    if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(fileExtension)) {
-      return 'Only PDF and DOCX files are allowed'
+    if (file.type !== allowedType && fileExtension !== '.docx') {
+      return 'Only DOCX (Word Document) files are allowed for resumes'
     }
     
     if (file.size > 10 * 1024 * 1024) { // 10MB limit
@@ -167,8 +165,13 @@ function UploadResume() {
       <div className="bg-white rounded-lg shadow-md p-6 mb-8">
         <h2 className="text-2xl font-semibold mb-4">Upload Resume</h2>
         <p className="text-gray-600 mb-4">
-          Upload your resume in PDF or DOCX format. This will be used as the base for tailored applications.
+          Upload your resume in DOCX (Word Document) format. This will be used as the base for tailored applications.
         </p>
+        <div className="bg-blue-50 border border-blue-200 rounded-md p-3 mb-4">
+          <p className="text-sm text-blue-800">
+            <strong>Note:</strong> Only .docx files are accepted. The system will edit your resume directly to save space.
+          </p>
+        </div>
 
         <form onSubmit={handleResumeUpload}>
           <div className="mb-4">
@@ -178,7 +181,7 @@ function UploadResume() {
             <input
               id="resume-input"
               type="file"
-              accept=".pdf,.docx"
+              accept=".docx"
               onChange={handleResumeFileChange}
               className="block w-full text-sm text-gray-500
                 file:mr-4 file:py-2 file:px-4
