@@ -108,4 +108,39 @@ router.post('/upload-document', authenticateToken, uploadDocument.single('docume
   }
 });
 
+/**
+ * GET /documents
+ * Fetch all documents for authenticated user
+ * Requires authentication
+ */
+router.get('/documents', authenticateToken, (req, res) => {
+  try {
+    const userId = req.user.userId;
+
+    // Fetch all documents for the user
+    const documents = db.prepare(`
+      SELECT id, file_path, file_type, uploaded_at
+      FROM documents
+      WHERE user_id = ?
+      ORDER BY uploaded_at DESC
+    `).all(userId);
+
+    res.status(200).json({
+      documents: documents.map(doc => ({
+        id: doc.id,
+        filePath: doc.file_path,
+        fileName: doc.file_path.split(/[\\/]/).pop(), // Extract filename from path
+        fileType: doc.file_type,
+        uploadedAt: doc.uploaded_at
+      }))
+    });
+  } catch (error) {
+    console.error('Error fetching documents:', error);
+    res.status(500).json({ 
+      error: 'Fetch failed',
+      message: error.message 
+    });
+  }
+});
+
 export default router;

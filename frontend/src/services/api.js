@@ -40,21 +40,21 @@ api.interceptors.response.use(
 // API methods
 export const authAPI = {
   register: (name, email, password) =>
-    api.post('/register', { name, email, password }),
+    api.post('/auth/register', { name, email, password }),
   login: (email, password) =>
-    api.post('/login', { email, password }),
+    api.post('/auth/login', { email, password }),
 }
 
 export const userAPI = {
-  getUser: () => api.get('/get-user'),
-  getApplicationHistory: () => api.get('/application-history'),
+  getUser: () => api.get('/user/get-user'),
+  getApplicationHistory: () => api.get('/job/application-history'),
 }
 
 export const uploadAPI = {
   uploadResume: (file) => {
     const formData = new FormData()
     formData.append('resume', file)
-    return api.post('/upload-resume', formData, {
+    return api.post('/upload/upload-resume', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -63,17 +63,18 @@ export const uploadAPI = {
   uploadDocument: (file, type) => {
     const formData = new FormData()
     formData.append('document', file)
-    formData.append('type', type)
-    return api.post('/upload-document', formData, {
+    formData.append('fileType', type)
+    return api.post('/upload/upload-document', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
     })
   },
+  getDocuments: () => api.get('/upload/documents'),
 }
 
 export const jobAPI = {
-  applyJob: (jobUrl) => api.post('/apply-job', { jobUrl }),
+  applyJob: (jobUrl) => api.post('/job/apply-job', { jobUrl }),
 }
 
 export default api

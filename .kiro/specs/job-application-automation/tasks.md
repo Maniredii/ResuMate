@@ -384,8 +384,20 @@
     - Style with Tailwind CSS cards and grid layout
     - _Requirements: 9.3, 9.4_
 
-- [ ] 14. Implement frontend file upload pages
-  - [ ] 14.1 Create UploadResume page
+- [x] 14. Implement frontend file upload pages
+
+
+
+
+
+
+
+
+
+
+  - [x] 14.1 Create UploadResume page
+
+
     - Create src/pages/UploadResume.jsx with file input
     - Add file type validation (PDF, DOCX only)
     - Implement handleUpload that calls POST /upload-resume with FormData
@@ -395,7 +407,10 @@
     - Style with Tailwind CSS
     - _Requirements: 9.3, 9.4, 9.5_
   
-  - [ ] 14.2 Create upload document functionality
+  - [x] 14.2 Create upload document functionality
+
+
+
     - Add document upload section to UploadResume page or create separate page
     - Implement file upload for certificates and other documents
     - Call POST /upload-document API
