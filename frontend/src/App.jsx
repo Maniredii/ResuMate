@@ -6,6 +6,7 @@ import Register from './pages/Register'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import ApplyJob from './pages/ApplyJob'
+import ApplicationHistory from './pages/ApplicationHistory'
 import { isAuthenticated } from './utils/auth'
 
 function App() {
@@ -51,9 +52,7 @@ function App() {
             path="/history"
             element={
               <ProtectedRoute>
-                <div className="container mx-auto px-4 py-8">
-                  <h1 className="text-2xl font-bold">Application History (Coming Soon)</h1>
-                </div>
+                <ApplicationHistory />
               </ProtectedRoute>
             }
           />

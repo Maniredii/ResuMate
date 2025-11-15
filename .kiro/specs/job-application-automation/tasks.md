@@ -461,7 +461,12 @@
     - Add link to view application in history
     - _Requirements: 9.4, 9.5_
 
-- [ ] 16. Implement frontend application history page
+- [x] 16. Implement frontend application history page
+
+
+
+
+
   - Create src/pages/ApplicationHistory.jsx
   - Fetch application history on mount using GET /application-history
   - Display applications in table format with columns: Date, Job Link, Status
