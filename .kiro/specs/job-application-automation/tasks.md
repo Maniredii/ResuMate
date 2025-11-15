@@ -276,7 +276,14 @@
     - Return array of application records
     - _Requirements: 6.2, 6.3, 6.5, 10.7_
 
-- [ ] 10. Set up Express server and middleware
+- [x] 10. Set up Express server and middleware
+
+
+
+
+
+
+
   - Create backend/server.js as main entry point
   - Configure Express app with JSON body parser
   - Add CORS middleware for frontend communication
