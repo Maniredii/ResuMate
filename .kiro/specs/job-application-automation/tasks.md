@@ -310,8 +310,17 @@
   - Set up base API URL as http://localhost:5000/api
   - _Requirements: 9.1, 9.2, 9.4_
 
-- [ ] 12. Implement frontend authentication pages
-  - [ ] 12.1 Create Register page
+- [x] 12. Implement frontend authentication pages
+
+
+
+
+
+
+
+  - [x] 12.1 Create Register page
+
+
     - Create src/pages/Register.jsx with form fields: name, email, password, confirm password
     - Add form validation for email format and password matching
     - Implement handleSubmit that calls POST /register API
@@ -320,7 +329,12 @@
     - Style with Tailwind CSS
     - _Requirements: 9.3, 9.4_
   
-  - [ ] 12.2 Create Login page
+
+
+  - [x] 12.2 Create Login page
+
+
+
     - Create src/pages/Login.jsx with form fields: email, password
     - Implement handleSubmit that calls POST /login API
     - Store JWT token in localStorage on success
@@ -329,13 +343,17 @@
     - Style with Tailwind CSS
     - _Requirements: 9.3, 9.4_
   
-  - [ ] 12.3 Create authentication utilities
+
+  - [x] 12.3 Create authentication utilities
+
     - Create src/utils/auth.js with helper functions
     - Implement getToken, setToken, removeToken, isAuthenticated functions
     - Add token to axios default headers
     - _Requirements: 9.4_
   
-  - [ ] 12.4 Create ProtectedRoute component
+
+  - [x] 12.4 Create ProtectedRoute component
+
     - Create src/components/ProtectedRoute.jsx
     - Check authentication status before rendering
     - Redirect to login if not authenticated
