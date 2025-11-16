@@ -7,6 +7,7 @@ import userRoutes from './routes/user.js';
 import uploadRoutes from './routes/upload.js';
 import jobRoutes from './routes/job.js';
 import profileRoutes from './routes/profile.js';
+import aiRoutes from './routes/ai.js';
 import { logApiError, logError } from './utils/logger.js';
 
 // Load environment variables
@@ -27,6 +28,7 @@ app.use('/api/user', userRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/job', jobRoutes);
 app.use('/api/profile', profileRoutes);
+app.use('/api/ai', aiRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

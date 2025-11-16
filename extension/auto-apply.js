@@ -19,7 +19,10 @@ class AutoApply {
 
   // Main auto-apply function
   async execute(options = {}) {
-    if (this.isRunning) {
+    // Allow re-execution for multi-page forms
+    const isMultiPageContinuation = options.isMultiPageContinuation || false;
+    
+    if (this.isRunning && !isMultiPageContinuation) {
       return { success: false, message: 'Auto-apply already running' };
     }
 
@@ -31,42 +34,59 @@ class AutoApply {
     }
 
     this.isRunning = true;
-    this.currentStep = 0;
-    this.filledFields = [];
+    
+    // Don't reset fields count on multi-page continuation
+    if (!isMultiPageContinuation) {
+      this.currentStep = 0;
+      this.filledFields = [];
+    }
     
     const autoSubmit = options.autoSubmit !== false; // Default true
     const reviewBeforeSubmit = options.reviewBeforeSubmit === true; // Default false
 
     try {
       // Step 1: Scan the page
-      this.updateProgress('Scanning page...', 1, 5);
+      this.updateProgress('Scanning page...', 1, 6);
       await this.wait(500);
       
       const formData = this.scanPage();
       
       // Step 2: Fill detected fields
-      this.updateProgress('Filling form fields...', 2, 5);
+      this.updateProgress('Filling form fields...', 2, 6);
       await this.fillAllFields(formData);
       await this.wait(1000);
       
-      // Step 3: Handle file uploads
-      this.updateProgress('Checking file uploads...', 3, 5);
-      await this.handleFileUploads(formData);
+      // Step 3: Handle file uploads and resume selection
+      this.updateProgress('Checking resume selection...', 3, 6);
+      const resumeHandled = await this.handleFileUploads(formData);
+      if (resumeHandled) {
+        // Wait for resume selection to process
+        await this.wait(1500);
+      }
       await this.wait(500);
       
       // Step 4: Handle multi-step forms
-      this.updateProgress('Checking for next steps...', 4, 5);
+      this.updateProgress('Checking for next steps...', 4, 6);
       const hasNextStep = await this.handleMultiStepForm();
       
       if (hasNextStep) {
-        // Recursively handle next step
-        await this.wait(2000);
-        return await this.execute(options);
+        // Wait for page to load completely
+        this.updateProgress('Loading next page...', 5, 6);
+        await this.wait(3000);
+        
+        // Reset running flag before continuing to next page
+        this.isRunning = false;
+        
+        // Recursively handle next step with continuation flag
+        return await this.execute({ 
+          ...options, 
+          isMultiPageContinuation: true 
+        });
       }
       
-      // Step 5: Submit or review
+      // Step 6: Submit or review
       if (autoSubmit && !reviewBeforeSubmit) {
-        this.updateProgress('Submitting application...', 5, 5);
+        this.updateProgress('Submitting application...', 6, 6);
         await this.submitForm();
         
         return {
@@ -75,7 +95,7 @@ class AutoApply {
           filledCount: this.filledFields.length
         };
       } else {
-        this.updateProgress('Ready for review', 5, 5);
+        this.updateProgress('Ready for review', 6, 6);
         this.highlightFilledFields();
         
         return {
@@ -198,6 +218,11 @@ class AutoApply {
 
   // Detect what type of data a field expects
   detectFieldType(combined, inputType) {
+    // Skip date/time/number fields that we can't auto-fill
+    if (inputType === 'date' || inputType === 'datetime-local' || inputType === 'month' || inputType === 'week' || inputType === 'time') {
+      return 'unknown'; // Don't try to fill these
+    }
+    
     // Personal Info
     if (combined.match(/first.*name|fname|given.*name/i) && !combined.includes('last')) {
       return 'firstName';
@@ -215,23 +240,23 @@ class AutoApply {
       return 'phone';
     }
     
-    // Location
-    if (combined.match(/street|address.*line.*1|address1|addr1/i) && !combined.match(/city|state|zip|country/i)) {
+    // Location - Be more specific to avoid conflicts with date fields
+    if (combined.match(/street|address.*line.*1|address1|addr1/i) && !combined.match(/city|state|zip|country|date|birth/i)) {
       return 'streetAddress';
     }
-    if (combined.match(/^address$/i) && !combined.match(/email|city|state|zip|country/i)) {
+    if (combined.match(/^address$/i) && !combined.match(/email|city|state|zip|country|date|birth/i)) {
       return 'address';
     }
-    if (combined.match(/city|town/i) && !combined.includes('country')) {
+    if (combined.match(/\bcity\b|\btown\b/i) && !combined.match(/country|date|birth/i)) {
       return 'city';
     }
-    if (combined.match(/state|province|region/i)) {
+    if (combined.match(/\bstate\b|province|region/i) && !combined.match(/date|birth|country/i)) {
       return 'state';
     }
-    if (combined.match(/zip|postal.*code|postcode/i)) {
+    if (combined.match(/zip|postal.*code|postcode/i) && !combined.match(/date|birth/i)) {
       return 'zipCode';
     }
-    if (combined.match(/country/i)) {
+    if (combined.match(/\bcountry\b/i) && !combined.match(/date|birth/i)) {
       return 'country';
     }
     
@@ -258,13 +283,16 @@ class AutoApply {
     }
     
     // Education
-    if (combined.match(/degree|education.*level/i)) {
+    if (combined.match(/highest.*level.*education|education.*level|level.*education.*completed/i)) {
+      return 'highestEducationLevel';
+    }
+    if (combined.match(/degree/i) && !combined.match(/level|highest/i)) {
       return 'degree';
     }
     if (combined.match(/major|field.*study|specialization/i)) {
       return 'major';
     }
-    if (combined.match(/university|college|school/i)) {
+    if (combined.match(/university|college|school/i) && !combined.match(/high.*school/i)) {
       return 'university';
     }
     if (combined.match(/graduation.*year|year.*graduation/i)) {
@@ -275,20 +303,59 @@ class AutoApply {
     if (combined.match(/speak.*english|english.*proficiency/i)) {
       return 'speaksEnglish';
     }
-    if (combined.match(/start.*immediately|immediate.*start|notice.*period/i)) {
+    if (combined.match(/notice.*period|availability.*start/i) && !combined.match(/interview/i)) {
+      return 'noticePeriod';
+    }
+    if (combined.match(/start.*immediately|immediate.*start|when.*can.*start/i)) {
       return 'canStartImmediately';
     }
-    if (combined.match(/night.*shift|shift.*preference/i)) {
+    if (combined.match(/current.*salary|present.*salary|existing.*salary/i)) {
+      return 'currentSalary';
+    }
+    if (combined.match(/expected.*salary|desired.*salary|salary.*expectation/i)) {
+      return 'expectedSalary';
+    }
+    if (combined.match(/salary.*expectation|compensation.*expectation/i)) {
+      return 'salaryExpectations';
+    }
+    if (combined.match(/night.*shift|shift.*preference|shift.*availability/i)) {
       return 'nightShiftAvailable';
     }
-    if (combined.match(/salary.*expectation|expected.*salary|compensation/i)) {
-      return 'salaryExpectations';
+    if (combined.match(/willing.*travel|travel.*required|can.*travel/i)) {
+      return 'willingToTravel';
+    }
+    if (combined.match(/driver.*license|driving.*license|valid.*license/i)) {
+      return 'hasDriversLicense';
+    }
+    if (combined.match(/criminal.*record|background.*check|conviction/i)) {
+      return 'hasCriminalRecord';
+    }
+    if (combined.match(/work.*permit|employment.*authorization/i)) {
+      return 'hasWorkPermit';
     }
     if (combined.match(/interview.*availability|available.*interview/i)) {
       return 'interviewAvailability';
     }
-    if (combined.match(/commute|relocate|relocation/i)) {
+    if (combined.match(/commute|relocate|relocation/i) && !combined.match(/willing/i)) {
       return 'commute';
+    }
+    if (combined.match(/hear.*about|find.*us|referral|source/i)) {
+      return 'referralSource';
+    }
+    if (combined.match(/why.*company|why.*us|why.*join|interest.*company/i)) {
+      return 'whyThisCompany';
+    }
+    if (combined.match(/why.*role|why.*position|why.*job|interest.*role/i)) {
+      return 'whyThisRole';
+    }
+    if (combined.match(/greatest.*strength|your.*strength|strong.*point/i)) {
+      return 'greatestStrength';
+    }
+    if (combined.match(/greatest.*weakness|your.*weakness|weak.*point|area.*improvement/i)) {
+      return 'greatestWeakness';
+    }
+    if (combined.match(/long.*term.*goal|career.*goal|future.*plan|where.*see.*yourself/i)) {
+      return 'longTermGoals';
     }
     if (combined.match(/work.*authorization|authorized.*work|visa|sponsorship/i)) {
       return 'workAuthorization';
@@ -325,9 +392,16 @@ class AutoApply {
       }
     }
 
-    // Fill textareas
+    // Fill textareas (with AI generation for custom questions)
     for (const field of formData.textareas) {
-      const value = this.getValueForField(field.fieldType);
+      let value = this.getValueForField(field.fieldType);
+      
+      // If no value in profile, try AI generation for ANY question
+      if (!value && field.label && field.label.length > 3) {
+        console.log('[Auto-Apply] No profile answer found. Generating AI answer for:', field.label);
+        value = await this.generateAIAnswer(field);
+      }
+      
       if (value) {
         await this.fillField(field.element, value);
         this.filledFields.push(field.fieldType);
@@ -335,13 +409,37 @@ class AutoApply {
       }
     }
 
+    // Also check text inputs for questions (longer placeholders/labels)
+    for (const field of formData.inputs) {
+      if (field.fieldType === 'unknown' && (field.label?.length > 10 || field.placeholder?.length > 10)) {
+        let value = this.getValueForField(field.fieldType);
+        
+        if (!value) {
+          console.log('[Auto-Apply] Generating AI answer for input field:', field.label || field.placeholder);
+          value = await this.generateAIAnswer(field);
+          
+          if (value) {
+            await this.fillField(field.element, value);
+            this.filledFields.push('ai-generated');
+            await this.wait(100);
+          }
+        }
+      }
+    }
+
     // Fill selects
+    console.log(`[Auto-Apply] Found ${formData.selects.length} dropdown fields`);
     for (const field of formData.selects) {
       const value = this.getValueForField(field.fieldType);
+      console.log(`[Auto-Apply] Dropdown field type: ${field.fieldType}, value: ${value}`);
       if (value) {
-        await this.fillSelect(field.element, value);
-        this.filledFields.push(field.fieldType);
+        const success = await this.fillSelect(field.element, value);
+        if (success) {
+          this.filledFields.push(field.fieldType);
+        }
         await this.wait(100);
+      } else {
+        console.log(`[Auto-Apply] No value found for dropdown: ${field.fieldType} (${field.label})`);
       }
     }
 
@@ -389,6 +487,7 @@ class AutoApply {
                          this.profile.applicationQuestions?.yearsOfExperience,
       
       // Education
+      highestEducationLevel: this.profile.education?.highestEducationLevel,
       degree: this.profile.education?.degree,
       major: this.profile.education?.major,
       university: this.profile.education?.university,
@@ -401,11 +500,24 @@ class AutoApply {
       
       // Application Questions
       speaksEnglish: this.profile.applicationQuestions?.speaksEnglish,
+      noticePeriod: this.profile.applicationQuestions?.noticePeriod,
       canStartImmediately: this.profile.applicationQuestions?.canStartImmediately,
-      nightShiftAvailable: this.profile.applicationQuestions?.nightShiftAvailable,
+      currentSalary: this.profile.applicationQuestions?.currentSalary,
+      expectedSalary: this.profile.applicationQuestions?.expectedSalary,
       salaryExpectations: this.profile.applicationQuestions?.salaryExpectations,
+      nightShiftAvailable: this.profile.applicationQuestions?.nightShiftAvailable,
+      willingToTravel: this.profile.applicationQuestions?.willingToTravel,
+      hasDriversLicense: this.profile.applicationQuestions?.hasDriversLicense,
+      hasCriminalRecord: this.profile.applicationQuestions?.hasCriminalRecord,
+      hasWorkPermit: this.profile.applicationQuestions?.hasWorkPermit,
       interviewAvailability: this.profile.applicationQuestions?.interviewAvailability,
       commute: this.profile.applicationQuestions?.commute,
+      referralSource: this.profile.applicationQuestions?.referralSource,
+      whyThisCompany: this.profile.applicationQuestions?.whyThisCompany,
+      whyThisRole: this.profile.applicationQuestions?.whyThisRole,
+      greatestStrength: this.profile.applicationQuestions?.greatestStrength,
+      greatestWeakness: this.profile.applicationQuestions?.greatestWeakness,
+      longTermGoals: this.profile.applicationQuestions?.longTermGoals,
       
       // Cover Letter
       coverLetter: this.profile.additionalInfo?.coverLetterTemplate
@@ -417,6 +529,21 @@ class AutoApply {
   // Fill a text input or textarea
   async fillField(element, value) {
     if (!element || !value) return;
+
+    // Skip if field type doesn't match value type
+    const inputType = element.type?.toLowerCase();
+    
+    // Don't fill date fields with text
+    if (inputType === 'date' || inputType === 'datetime-local' || inputType === 'month' || inputType === 'week') {
+      console.log('[Auto-Apply] Skipping date field:', element.name || element.id);
+      return;
+    }
+    
+    // Don't fill number fields with text that isn't a number
+    if (inputType === 'number' && isNaN(value)) {
+      console.log('[Auto-Apply] Skipping number field with non-numeric value:', element.name || element.id);
+      return;
+    }
 
     // Focus the element
     element.focus();
@@ -444,36 +571,146 @@ class AutoApply {
 
   // Fill a select dropdown
   async fillSelect(element, value) {
-    if (!element || !value) return;
+    if (!element || !value) return false;
 
     const options = Array.from(element.options);
-    const valueStr = String(value).toLowerCase();
+    const valueStr = String(value).toLowerCase().trim();
+    
+    console.log(`[Auto-Apply] Trying to match dropdown value: "${value}"`);
+    console.log(`[Auto-Apply] Available options:`, options.map(o => `"${o.text}" (value: "${o.value}")`));
 
-    // Try exact match first
-    let matchedOption = options.find(opt => 
-      opt.value.toLowerCase() === valueStr || 
-      opt.text.toLowerCase() === valueStr
+    let matchedOption = null;
+    let matchMethod = '';
+
+    // Method 1: Exact match (value or text)
+    matchedOption = options.find(opt => 
+      opt.value.toLowerCase().trim() === valueStr || 
+      opt.text.toLowerCase().trim() === valueStr
     );
+    if (matchedOption) matchMethod = 'exact match';
 
-    // Try partial match
+    // Method 2: Exact match without special characters and spaces
+    if (!matchedOption) {
+      const cleanValue = valueStr.replace(/[^a-z0-9]/g, '');
+      matchedOption = options.find(opt => {
+        const cleanOptValue = opt.value.toLowerCase().replace(/[^a-z0-9]/g, '');
+        const cleanOptText = opt.text.toLowerCase().replace(/[^a-z0-9]/g, '');
+        return cleanOptValue === cleanValue || cleanOptText === cleanValue;
+      });
+      if (matchedOption) matchMethod = 'clean match';
+    }
+
+    // Method 3: Starts with match
+    if (!matchedOption) {
+      matchedOption = options.find(opt => 
+        opt.value.toLowerCase().startsWith(valueStr) || 
+        opt.text.toLowerCase().startsWith(valueStr) ||
+        valueStr.startsWith(opt.value.toLowerCase()) ||
+        valueStr.startsWith(opt.text.toLowerCase())
+      );
+      if (matchedOption) matchMethod = 'starts with';
+    }
+
+    // Method 4: Partial match (contains)
     if (!matchedOption) {
       matchedOption = options.find(opt => 
         opt.value.toLowerCase().includes(valueStr) || 
-        opt.text.toLowerCase().includes(valueStr) ||
-        valueStr.includes(opt.value.toLowerCase()) ||
-        valueStr.includes(opt.text.toLowerCase())
+        opt.text.toLowerCase().includes(valueStr)
       );
+      if (matchedOption) matchMethod = 'contains';
+    }
+
+    // Method 5: Reverse partial match (value contains option)
+    if (!matchedOption) {
+      matchedOption = options.find(opt => {
+        const optVal = opt.value.toLowerCase().trim();
+        const optTxt = opt.text.toLowerCase().trim();
+        return (optVal.length > 2 && valueStr.includes(optVal)) ||
+               (optTxt.length > 2 && valueStr.includes(optTxt));
+      });
+      if (matchedOption) matchMethod = 'reverse contains';
+    }
+
+    // Method 6: Word matching (for "Bachelor's Degree" matching "Bachelor")
+    if (!matchedOption) {
+      const valueWords = valueStr.split(/\s+/).filter(w => w.length > 2);
+      matchedOption = options.find(opt => {
+        const optText = opt.text.toLowerCase();
+        const optValue = opt.value.toLowerCase();
+        const optWords = [...optText.split(/\s+/), ...optValue.split(/\s+/)].filter(w => w.length > 2);
+        
+        return valueWords.some(vWord => 
+          optWords.some(oWord => 
+            vWord.includes(oWord) || oWord.includes(vWord)
+          )
+        );
+      });
+      if (matchedOption) matchMethod = 'word match';
+    }
+
+    // Method 7: Fuzzy match (first letters)
+    if (!matchedOption) {
+      const valueInitials = valueStr.split(/\s+/).map(w => w[0]).join('');
+      matchedOption = options.find(opt => {
+        const optInitials = opt.text.toLowerCase().split(/\s+/).map(w => w[0]).join('');
+        return valueInitials === optInitials;
+      });
+      if (matchedOption) matchMethod = 'initials match';
+    }
+
+    // Method 8: Number matching (for "5 years" matching "5")
+    if (!matchedOption) {
+      const valueNumbers = valueStr.match(/\d+/g);
+      if (valueNumbers) {
+        matchedOption = options.find(opt => {
+          const optNumbers = (opt.text + opt.value).match(/\d+/g);
+          return optNumbers && valueNumbers.some(vn => optNumbers.includes(vn));
+        });
+        if (matchedOption) matchMethod = 'number match';
+      }
     }
 
     if (matchedOption) {
+      console.log(`[Auto-Apply] ✅ Matched option: "${matchedOption.text}" using ${matchMethod}`);
+      
+      // Scroll dropdown into view
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      await this.wait(100);
+      
+      // Focus and select
+      element.focus();
+      await this.wait(50);
+      
+      // Set value
       element.value = matchedOption.value;
+      
+      // Trigger all necessary events for different frameworks
       element.dispatchEvent(new Event('change', { bubbles: true }));
+      element.dispatchEvent(new Event('input', { bubbles: true }));
       element.dispatchEvent(new Event('blur', { bubbles: true }));
       
+      // Trigger React/Vue specific events
+      const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLSelectElement.prototype, 'value').set;
+      nativeInputValueSetter.call(element, matchedOption.value);
+      element.dispatchEvent(new Event('input', { bubbles: true }));
+      element.dispatchEvent(new Event('change', { bubbles: true }));
+      
+      // Visual feedback
       element.style.backgroundColor = '#d1fae5';
+      element.style.transition = 'background-color 0.3s';
+      element.style.borderColor = '#10b981';
+      element.style.borderWidth = '2px';
+      
       setTimeout(() => {
         element.style.backgroundColor = '';
+        element.style.borderColor = '';
+        element.style.borderWidth = '';
       }, 2000);
+      
+      return true;
+    } else {
+      console.log(`[Auto-Apply] ❌ No match found for dropdown value: "${value}"`);
+      return false;
     }
   }
 
@@ -488,32 +725,97 @@ class AutoApply {
     }
   }
 
-  // Handle file uploads (resume, etc.)
+  // Handle file uploads and resume selection (Indeed specific)
   async handleFileUploads(formData) {
-    // Note: File uploads cannot be automated due to browser security
-    // We can only detect them and notify the user
-    if (formData.fileInputs.length > 0) {
-      console.log('File uploads detected:', formData.fileInputs.length);
-      // Could show a notification to user
+    // Check for Indeed resume selection (already uploaded resumes)
+    const resumeButtons = document.querySelectorAll('[data-testid*="resume"], [class*="resume-card"], button[aria-label*="resume"], div[role="button"][class*="resume"]');
+    
+    if (resumeButtons.length > 0) {
+      console.log('[Auto-Apply] Found resume selection buttons:', resumeButtons.length);
+      
+      // Click the first resume (most recent)
+      const firstResume = resumeButtons[0];
+      if (this.isVisible(firstResume)) {
+        console.log('[Auto-Apply] Clicking resume selection');
+        firstResume.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        await this.wait(500);
+        firstResume.click();
+        await this.wait(1000);
+        return true;
+      }
     }
+    
+    // Check for file input fields
+    if (formData.fileInputs.length > 0) {
+      console.log('[Auto-Apply] File uploads detected:', formData.fileInputs.length);
+      // Cannot automate file uploads due to browser security
+    }
+    
+    return false;
   }
 
   // Handle multi-step forms (Next/Continue buttons)
   async handleMultiStepForm() {
+    // Wait for any animations or page updates
+    await this.wait(1000);
+    
+    // Re-scan the page for buttons
     const formData = this.scanPage();
     
+    // Look for Continue/Next buttons (Indeed specific and general)
+    const continueSelectors = [
+      'button[data-testid*="continue"]',
+      'button[aria-label*="continue"]',
+      'button[type="submit"]',
+      'button:contains("Continue")',
+      'button:contains("Next")',
+      'button.ia-continueButton',
+      'button[class*="continue"]',
+      'button[class*="next"]'
+    ];
+    
+    // Try each selector
+    for (const selector of continueSelectors) {
+      try {
+        const buttons = document.querySelectorAll(selector);
+        for (const button of buttons) {
+          if (this.isVisible(button)) {
+            const text = (button.textContent || button.value || '').toLowerCase();
+            if (text.includes('continue') || text.includes('next') || text.includes('proceed')) {
+              console.log('[Auto-Apply] Found continue button:', text);
+              
+              // Scroll into view
+              button.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              await this.wait(500);
+              
+              // Click the button
+              button.click();
+              console.log('[Auto-Apply] Clicked continue button');
+              
+              // Wait for page transition
+              await this.wait(2000);
+              
+              return true; // Indicates there's a next step
+            }
+          }
+        }
+      } catch (e) {
+        console.log('[Auto-Apply] Selector failed:', selector, e);
+      }
+    }
+    
+    // Fallback to original method
     if (formData.buttons.next.length > 0) {
-      // Click the first "Next" or "Continue" button
       const nextButton = formData.buttons.next[0];
       
-      // Scroll button into view
-      nextButton.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      await this.wait(500);
-      
-      // Click the button
-      nextButton.click();
-      
-      return true; // Indicates there's a next step
+      if (this.isVisible(nextButton)) {
+        console.log('[Auto-Apply] Using fallback next button');
+        nextButton.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        await this.wait(500);
+        nextButton.click();
+        await this.wait(2000);
+        return true;
+      }
     }
     
     return false;
@@ -631,6 +933,91 @@ class AutoApply {
   // Stop the auto-apply process
   stop() {
     this.isRunning = false;
+  }
+
+  // Check if field looks like a question (not needed anymore, we generate for all empty fields)
+  isQuestion(field) {
+    const text = (field.label + ' ' + field.placeholder).toLowerCase();
+    
+    // Check if it looks like a question
+    return text.includes('?') || 
+           text.includes('why') || 
+           text.includes('how') || 
+           text.includes('what') || 
+           text.includes('describe') || 
+           text.includes('tell') || 
+           text.includes('explain') ||
+           text.length > 15; // Longer labels are likely questions
+  }
+
+  // Generate AI answer for custom questions
+  async generateAIAnswer(field) {
+    try {
+      // Get job description from page
+      const jobDescription = this.extractJobDescription();
+      
+      // Get token
+      const result = await chrome.storage.local.get(['token']);
+      const token = result.token;
+      
+      if (!token) {
+        console.log('[Auto-Apply] No token, skipping AI generation');
+        return null;
+      }
+
+      // Call AI API
+      const response = await fetch('http://localhost:5000/api/ai/generate-answer', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          question: field.label || field.placeholder || 'Why are you interested?',
+          jobDescription: jobDescription,
+          userProfile: this.profile
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('[Auto-Apply] ✅ AI generated answer');
+        return data.answer;
+      } else {
+        console.log('[Auto-Apply] AI generation failed:', response.status);
+        return null;
+      }
+    } catch (error) {
+      console.error('[Auto-Apply] AI generation error:', error);
+      return null;
+    }
+  }
+
+  // Extract job description from the page
+  extractJobDescription() {
+    // Try common selectors for job descriptions
+    const selectors = [
+      '[class*="jobdescription"]',
+      '[class*="job-description"]',
+      '[class*="description"]',
+      '[id*="jobdescription"]',
+      '[id*="job-description"]',
+      'article',
+      '[role="article"]',
+      '.job-details',
+      '.posting-description'
+    ];
+
+    for (const selector of selectors) {
+      const element = document.querySelector(selector);
+      if (element && element.textContent.length > 100) {
+        return element.textContent.substring(0, 2000); // Limit to 2000 chars
+      }
+    }
+
+    // Fallback: get all visible text
+    const bodyText = document.body.innerText;
+    return bodyText.substring(0, 2000);
   }
 }
 

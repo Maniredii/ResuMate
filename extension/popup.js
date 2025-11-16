@@ -28,13 +28,31 @@ async function saveUserData(userData) {
 
 // Get user profile for auto-fill
 async function getUserProfile() {
-  const result = await chrome.storage.local.get(['userProfile']);
-  return result.userProfile || null;
+  console.log('[Storage] Loading profile from chrome.storage.local');
+  try {
+    const result = await chrome.storage.local.get(['userProfile']);
+    console.log('[Storage] Profile loaded:', result.userProfile);
+    return result.userProfile || null;
+  } catch (error) {
+    console.error('[Storage] Error loading profile:', error);
+    return null;
+  }
 }
 
 // Save user profile for auto-fill
 async function saveUserProfile(profile) {
-  await chrome.storage.local.set({ userProfile: profile });
+  console.log('[Storage] Saving profile to chrome.storage.local:', profile);
+  try {
+    await chrome.storage.local.set({ userProfile: profile });
+    console.log('[Storage] Profile saved successfully');
+    
+    // Verify it was saved
+    const result = await chrome.storage.local.get(['userProfile']);
+    console.log('[Storage] Verification - Profile in storage:', result.userProfile);
+  } catch (error) {
+    console.error('[Storage] Error saving profile:', error);
+    throw error;
+  }
 }
 
 // Fetch profile from backend and sync to extension
@@ -575,14 +593,19 @@ checkAuth();
 
 // Show profile setup tab
 async function showProfileSetup() {
+  console.log('[Profile] showProfileSetup called');
+  
   // Try to sync from backend first
   let profile = await syncProfileFromBackend();
+  console.log('[Profile] Profile from backend:', profile);
   
   if (!profile) {
     profile = await getUserProfile();
+    console.log('[Profile] Profile from local storage:', profile);
   }
   
   if (!profile) {
+    console.log('[Profile] No profile found, using default');
     profile = {
       personalInfo: {
       firstName: '',
@@ -604,7 +627,8 @@ async function showProfileSetup() {
       degree: '',
       major: '',
       university: '',
-      graduationYear: ''
+      graduationYear: '',
+      highestEducationLevel: ''
     },
     preferences: {
       desiredSalary: '',
@@ -622,7 +646,20 @@ async function showProfileSetup() {
         salaryExpectations: '',
         yearsOfExperience: '',
         interviewAvailability: '',
-        commute: ''
+        commute: '',
+        noticePeriod: '',
+        currentSalary: '',
+        expectedSalary: '',
+        willingToTravel: '',
+        hasDriversLicense: '',
+        hasCriminalRecord: '',
+        hasWorkPermit: '',
+        referralSource: '',
+        whyThisCompany: '',
+        whyThisRole: '',
+        greatestStrength: '',
+        greatestWeakness: '',
+        longTermGoals: ''
       }
     };
   }
@@ -643,16 +680,16 @@ async function showProfileSetup() {
           <div style="margin-bottom: 16px;">
             <h3 style="font-size: 13px; font-weight: 700; color: #1f2937; margin-bottom: 8px;">Personal Information</h3>
             
-            <input type="text" id="firstName" placeholder="First Name" value="${profile.personalInfo.firstName}"
+            <input type="text" id="firstName" placeholder="First Name" value="${profile.personalInfo.firstName || ''}"
               style="width: 100%; padding: 8px; margin-bottom: 6px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 12px;">
             
-            <input type="text" id="lastName" placeholder="Last Name" value="${profile.personalInfo.lastName}"
+            <input type="text" id="lastName" placeholder="Last Name" value="${profile.personalInfo.lastName || ''}"
               style="width: 100%; padding: 8px; margin-bottom: 6px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 12px;">
             
-            <input type="email" id="email" placeholder="Email" value="${profile.personalInfo.email}"
+            <input type="email" id="email" placeholder="Email" value="${profile.personalInfo.email || ''}"
               style="width: 100%; padding: 8px; margin-bottom: 6px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 12px;">
             
-            <input type="tel" id="phone" placeholder="Phone Number" value="${profile.personalInfo.phone}"
+            <input type="tel" id="phone" placeholder="Phone Number" value="${profile.personalInfo.phone || ''}"
               style="width: 100%; padding: 8px; margin-bottom: 6px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 12px;">
           </div>
 
@@ -660,19 +697,19 @@ async function showProfileSetup() {
           <div style="margin-bottom: 16px;">
             <h3 style="font-size: 13px; font-weight: 700; color: #1f2937; margin-bottom: 8px;">Location</h3>
             
-            <input type="text" id="streetAddress" placeholder="Street Address" value="${profile.personalInfo.location.streetAddress}"
+            <input type="text" id="streetAddress" placeholder="Street Address" value="${profile.personalInfo.location.streetAddress || ''}"
               style="width: 100%; padding: 8px; margin-bottom: 6px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 12px;">
             
-            <input type="text" id="city" placeholder="City" value="${profile.personalInfo.location.city}"
+            <input type="text" id="city" placeholder="City" value="${profile.personalInfo.location.city || ''}"
               style="width: 100%; padding: 8px; margin-bottom: 6px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 12px;">
             
-            <input type="text" id="state" placeholder="State/Province" value="${profile.personalInfo.location.state}"
+            <input type="text" id="state" placeholder="State/Province" value="${profile.personalInfo.location.state || ''}"
               style="width: 100%; padding: 8px; margin-bottom: 6px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 12px;">
             
-            <input type="text" id="country" placeholder="Country" value="${profile.personalInfo.location.country}"
+            <input type="text" id="country" placeholder="Country" value="${profile.personalInfo.location.country || ''}"
               style="width: 100%; padding: 8px; margin-bottom: 6px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 12px;">
             
-            <input type="text" id="zipCode" placeholder="Zip Code" value="${profile.personalInfo.location.zipCode}"
+            <input type="text" id="zipCode" placeholder="Zip Code" value="${profile.personalInfo.location.zipCode || ''}"
               style="width: 100%; padding: 8px; margin-bottom: 6px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 12px;">
           </div>
 
@@ -680,13 +717,13 @@ async function showProfileSetup() {
           <div style="margin-bottom: 16px;">
             <h3 style="font-size: 13px; font-weight: 700; color: #1f2937; margin-bottom: 8px;">Social Links</h3>
             
-            <input type="url" id="linkedIn" placeholder="LinkedIn URL" value="${profile.personalInfo.linkedIn}"
+            <input type="url" id="linkedIn" placeholder="LinkedIn URL" value="${profile.personalInfo.linkedIn || ''}"
               style="width: 100%; padding: 8px; margin-bottom: 6px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 12px;">
             
-            <input type="url" id="portfolio" placeholder="Portfolio/Website URL" value="${profile.personalInfo.portfolio}"
+            <input type="url" id="portfolio" placeholder="Portfolio/Website URL" value="${profile.personalInfo.portfolio || ''}"
               style="width: 100%; padding: 8px; margin-bottom: 6px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 12px;">
             
-            <input type="url" id="github" placeholder="GitHub URL" value="${profile.personalInfo.github}"
+            <input type="url" id="github" placeholder="GitHub URL" value="${profile.personalInfo.github || ''}"
               style="width: 100%; padding: 8px; margin-bottom: 6px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 12px;">
           </div>
 
@@ -694,13 +731,13 @@ async function showProfileSetup() {
           <div style="margin-bottom: 16px;">
             <h3 style="font-size: 13px; font-weight: 700; color: #1f2937; margin-bottom: 8px;">Work Experience</h3>
             
-            <input type="text" id="currentTitle" placeholder="Current Job Title" value="${profile.workExperience.currentTitle}"
+            <input type="text" id="currentTitle" placeholder="Current Job Title" value="${profile.workExperience.currentTitle || ''}"
               style="width: 100%; padding: 8px; margin-bottom: 6px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 12px;">
             
-            <input type="text" id="currentCompany" placeholder="Current Company" value="${profile.workExperience.currentCompany}"
+            <input type="text" id="currentCompany" placeholder="Current Company" value="${profile.workExperience.currentCompany || ''}"
               style="width: 100%; padding: 8px; margin-bottom: 6px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 12px;">
             
-            <input type="text" id="yearsOfExperience" placeholder="Years of Experience" value="${profile.workExperience.yearsOfExperience}"
+            <input type="text" id="yearsOfExperience" placeholder="Years of Experience" value="${profile.workExperience.yearsOfExperience || ''}"
               style="width: 100%; padding: 8px; margin-bottom: 6px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 12px;">
           </div>
 
@@ -708,16 +745,29 @@ async function showProfileSetup() {
           <div style="margin-bottom: 16px;">
             <h3 style="font-size: 13px; font-weight: 700; color: #1f2937; margin-bottom: 8px;">Education</h3>
             
-            <input type="text" id="degree" placeholder="Degree (e.g., Bachelor's)" value="${profile.education.degree}"
+            <label style="display: block; font-size: 11px; color: #374151; margin-bottom: 4px;">Highest Level of Education</label>
+            <select id="highestEducationLevel" style="width: 100%; padding: 8px; margin-bottom: 6px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 12px;">
+              <option value="">Select...</option>
+              <option value="High School Diploma" ${profile.education.highestEducationLevel === 'High School Diploma' ? 'selected' : ''}>High School Diploma</option>
+              <option value="Associate's Degree" ${profile.education.highestEducationLevel === "Associate's Degree" ? 'selected' : ''}>Associate's Degree</option>
+              <option value="Bachelor's Degree" ${profile.education.highestEducationLevel === "Bachelor's Degree" ? 'selected' : ''}>Bachelor's Degree</option>
+              <option value="Master's Degree" ${profile.education.highestEducationLevel === "Master's Degree" ? 'selected' : ''}>Master's Degree</option>
+              <option value="Doctorate/PhD" ${profile.education.highestEducationLevel === 'Doctorate/PhD' ? 'selected' : ''}>Doctorate/PhD</option>
+              <option value="Professional Degree" ${profile.education.highestEducationLevel === 'Professional Degree' ? 'selected' : ''}>Professional Degree (JD, MD, etc.)</option>
+              <option value="Some College" ${profile.education.highestEducationLevel === 'Some College' ? 'selected' : ''}>Some College (No Degree)</option>
+              <option value="Vocational/Technical" ${profile.education.highestEducationLevel === 'Vocational/Technical' ? 'selected' : ''}>Vocational/Technical Training</option>
+            </select>
+            
+            <input type="text" id="degree" placeholder="Degree (e.g., Bachelor's)" value="${profile.education.degree || ''}"
               style="width: 100%; padding: 8px; margin-bottom: 6px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 12px;">
             
-            <input type="text" id="major" placeholder="Major/Field of Study" value="${profile.education.major}"
+            <input type="text" id="major" placeholder="Major/Field of Study" value="${profile.education.major || ''}"
               style="width: 100%; padding: 8px; margin-bottom: 6px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 12px;">
             
-            <input type="text" id="university" placeholder="University/College" value="${profile.education.university}"
+            <input type="text" id="university" placeholder="University/College" value="${profile.education.university || ''}"
               style="width: 100%; padding: 8px; margin-bottom: 6px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 12px;">
             
-            <input type="text" id="graduationYear" placeholder="Graduation Year" value="${profile.education.graduationYear}"
+            <input type="text" id="graduationYear" placeholder="Graduation Year" value="${profile.education.graduationYear || ''}"
               style="width: 100%; padding: 8px; margin-bottom: 6px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 12px;">
           </div>
 
@@ -725,7 +775,7 @@ async function showProfileSetup() {
           <div style="margin-bottom: 16px;">
             <h3 style="font-size: 13px; font-weight: 700; color: #1f2937; margin-bottom: 8px;">Preferences</h3>
             
-            <input type="text" id="workAuthorization" placeholder="Work Authorization (e.g., US Citizen)" value="${profile.preferences.workAuthorization}"
+            <input type="text" id="workAuthorization" placeholder="Work Authorization (e.g., US Citizen)" value="${profile.preferences.workAuthorization || ''}"
               style="width: 100%; padding: 8px; margin-bottom: 6px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 12px;">
             
             <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 12px; color: #374151;">
@@ -744,7 +794,7 @@ async function showProfileSetup() {
             <h3 style="font-size: 13px; font-weight: 700; color: #1f2937; margin-bottom: 8px;">Cover Letter Template</h3>
             
             <textarea id="coverLetterTemplate" placeholder="Enter a template cover letter that will be used for applications..." rows="4"
-              style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 12px; resize: vertical;">${profile.additionalInfo.coverLetterTemplate}</textarea>
+              style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 12px; resize: vertical;">${profile.additionalInfo.coverLetterTemplate || ''}</textarea>
           </div>
 
           <!-- Application Questions -->
@@ -757,25 +807,52 @@ async function showProfileSetup() {
               <option value="No" ${profile.applicationQuestions.speaksEnglish === 'No' ? 'selected' : ''}>No</option>
             </select>
             
+            <label style="display: block; font-size: 11px; color: #374151; margin-bottom: 4px;">Notice Period</label>
+            <input type="text" id="noticePeriod" placeholder="e.g., 2 weeks, 1 month, Immediate" value="${profile.applicationQuestions.noticePeriod || ''}"
+              style="width: 100%; padding: 8px; margin-bottom: 6px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 12px;">
+            
             <label style="display: block; font-size: 11px; color: #374151; margin-bottom: 4px;">Can you start immediately?</label>
             <textarea id="canStartImmediately" placeholder="e.g., Yes, I can start immediately" rows="2"
-              style="width: 100%; padding: 8px; margin-bottom: 6px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 12px; resize: vertical;">${profile.applicationQuestions.canStartImmediately}</textarea>
+              style="width: 100%; padding: 8px; margin-bottom: 6px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 12px; resize: vertical;">${profile.applicationQuestions.canStartImmediately || ''}</textarea>
             
-            <label style="display: block; font-size: 11px; color: #374151; margin-bottom: 4px;">Night shift availability?</label>
-            <textarea id="nightShiftAvailable" placeholder="e.g., Yes, I am available for night shifts" rows="2"
-              style="width: 100%; padding: 8px; margin-bottom: 6px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 12px; resize: vertical;">${profile.applicationQuestions.nightShiftAvailable}</textarea>
+            <label style="display: block; font-size: 11px; color: #374151; margin-bottom: 4px;">Current Salary</label>
+            <input type="text" id="currentSalary" placeholder="e.g., $80,000 per year" value="${profile.applicationQuestions.currentSalary || ''}"
+              style="width: 100%; padding: 8px; margin-bottom: 6px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 12px;">
+            
+            <label style="display: block; font-size: 11px; color: #374151; margin-bottom: 4px;">Expected Salary</label>
+            <input type="text" id="expectedSalary" placeholder="e.g., $100,000 per year" value="${profile.applicationQuestions.expectedSalary || ''}"
+              style="width: 100%; padding: 8px; margin-bottom: 6px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 12px;">
             
             <label style="display: block; font-size: 11px; color: #374151; margin-bottom: 4px;">Salary expectations?</label>
             <textarea id="salaryExpectations" placeholder="e.g., Yes, the salary meets my expectations" rows="2"
-              style="width: 100%; padding: 8px; margin-bottom: 6px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 12px; resize: vertical;">${profile.applicationQuestions.salaryExpectations}</textarea>
+              style="width: 100%; padding: 8px; margin-bottom: 6px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 12px; resize: vertical;">${profile.applicationQuestions.salaryExpectations || ''}</textarea>
+            
+            <label style="display: block; font-size: 11px; color: #374151; margin-bottom: 4px;">Night shift availability?</label>
+            <textarea id="nightShiftAvailable" placeholder="e.g., Yes, I am available for night shifts" rows="2"
+              style="width: 100%; padding: 8px; margin-bottom: 6px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 12px; resize: vertical;">${profile.applicationQuestions.nightShiftAvailable || ''}</textarea>
+            
+            <label style="display: block; font-size: 11px; color: #374151; margin-bottom: 4px;">Willing to travel?</label>
+            <select id="willingToTravel" style="width: 100%; padding: 8px; margin-bottom: 6px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 12px;">
+              <option value="">Select...</option>
+              <option value="Yes" ${profile.applicationQuestions.willingToTravel === 'Yes' ? 'selected' : ''}>Yes</option>
+              <option value="No" ${profile.applicationQuestions.willingToTravel === 'No' ? 'selected' : ''}>No</option>
+              <option value="Occasionally" ${profile.applicationQuestions.willingToTravel === 'Occasionally' ? 'selected' : ''}>Occasionally</option>
+            </select>
+            
+            <label style="display: block; font-size: 11px; color: #374151; margin-bottom: 4px;">Do you have a driver's license?</label>
+            <select id="hasDriversLicense" style="width: 100%; padding: 8px; margin-bottom: 6px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 12px;">
+              <option value="">Select...</option>
+              <option value="Yes" ${profile.applicationQuestions.hasDriversLicense === 'Yes' ? 'selected' : ''}>Yes</option>
+              <option value="No" ${profile.applicationQuestions.hasDriversLicense === 'No' ? 'selected' : ''}>No</option>
+            </select>
             
             <label style="display: block; font-size: 11px; color: #374151; margin-bottom: 4px;">Years of Experience</label>
-            <input type="text" id="yearsOfExperience" placeholder="e.g., 5 years" value="${profile.applicationQuestions.yearsOfExperience}"
+            <input type="text" id="yearsOfExperience" placeholder="e.g., 5 years" value="${profile.applicationQuestions.yearsOfExperience || ''}"
               style="width: 100%; padding: 8px; margin-bottom: 6px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 12px;">
             
             <label style="display: block; font-size: 11px; color: #374151; margin-bottom: 4px;">Interview Availability</label>
             <textarea id="interviewAvailability" placeholder="e.g., Monday-Friday 9 AM - 5 PM IST" rows="2"
-              style="width: 100%; padding: 8px; margin-bottom: 6px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 12px; resize: vertical;">${profile.applicationQuestions.interviewAvailability}</textarea>
+              style="width: 100%; padding: 8px; margin-bottom: 6px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 12px; resize: vertical;">${profile.applicationQuestions.interviewAvailability || ''}</textarea>
             
             <label style="display: block; font-size: 11px; color: #374151; margin-bottom: 4px;">Commute/Relocation</label>
             <select id="commute" style="width: 100%; padding: 8px; margin-bottom: 6px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 12px;">
@@ -785,6 +862,30 @@ async function showProfileSetup() {
               <option value="Yes, but I need relocation assistance" ${profile.applicationQuestions.commute === 'Yes, but I need relocation assistance' ? 'selected' : ''}>Yes, but I need relocation assistance</option>
               <option value="No" ${profile.applicationQuestions.commute === 'No' ? 'selected' : ''}>No</option>
             </select>
+            
+            <label style="display: block; font-size: 11px; color: #374151; margin-bottom: 4px;">How did you hear about us?</label>
+            <input type="text" id="referralSource" placeholder="e.g., LinkedIn, Indeed, Referral" value="${profile.applicationQuestions.referralSource || ''}"
+              style="width: 100%; padding: 8px; margin-bottom: 6px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 12px;">
+            
+            <label style="display: block; font-size: 11px; color: #374151; margin-bottom: 4px;">Why do you want to work for this company?</label>
+            <textarea id="whyThisCompany" placeholder="e.g., I admire your company's mission and values..." rows="3"
+              style="width: 100%; padding: 8px; margin-bottom: 6px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 12px; resize: vertical;">${profile.applicationQuestions.whyThisCompany || ''}</textarea>
+            
+            <label style="display: block; font-size: 11px; color: #374151; margin-bottom: 4px;">Why are you interested in this role?</label>
+            <textarea id="whyThisRole" placeholder="e.g., This role aligns with my career goals..." rows="3"
+              style="width: 100%; padding: 8px; margin-bottom: 6px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 12px; resize: vertical;">${profile.applicationQuestions.whyThisRole || ''}</textarea>
+            
+            <label style="display: block; font-size: 11px; color: #374151; margin-bottom: 4px;">What is your greatest strength?</label>
+            <textarea id="greatestStrength" placeholder="e.g., Problem-solving and attention to detail..." rows="2"
+              style="width: 100%; padding: 8px; margin-bottom: 6px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 12px; resize: vertical;">${profile.applicationQuestions.greatestStrength || ''}</textarea>
+            
+            <label style="display: block; font-size: 11px; color: #374151; margin-bottom: 4px;">What is your greatest weakness?</label>
+            <textarea id="greatestWeakness" placeholder="e.g., I sometimes focus too much on details..." rows="2"
+              style="width: 100%; padding: 8px; margin-bottom: 6px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 12px; resize: vertical;">${profile.applicationQuestions.greatestWeakness || ''}</textarea>
+            
+            <label style="display: block; font-size: 11px; color: #374151; margin-bottom: 4px;">What are your long-term career goals?</label>
+            <textarea id="longTermGoals" placeholder="e.g., I aim to become a senior leader in..." rows="2"
+              style="width: 100%; padding: 8px; margin-bottom: 6px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 12px; resize: vertical;">${profile.applicationQuestions.longTermGoals || ''}</textarea>
           </div>
 
           <button type="submit" class="button button-primary">
@@ -798,8 +899,17 @@ async function showProfileSetup() {
     `;
 
     // Handle form submission
-    document.getElementById('profileForm').addEventListener('submit', async (e) => {
+    const profileForm = document.getElementById('profileForm');
+    if (!profileForm) {
+      console.error('[Profile] Form not found!');
+      return;
+    }
+    
+    console.log('[Profile] Form found, attaching submit handler');
+    
+    profileForm.addEventListener('submit', async (e) => {
       e.preventDefault();
+      console.log('[Profile] Form submitted');
 
       const updatedProfile = {
         personalInfo: {
@@ -825,6 +935,7 @@ async function showProfileSetup() {
           yearsOfExperience: document.getElementById('yearsOfExperience').value
         },
         education: {
+          highestEducationLevel: document.getElementById('highestEducationLevel').value,
           degree: document.getElementById('degree').value,
           major: document.getElementById('major').value,
           university: document.getElementById('university').value,
@@ -840,22 +951,47 @@ async function showProfileSetup() {
         },
         applicationQuestions: {
           speaksEnglish: document.getElementById('speaksEnglish').value,
+          noticePeriod: document.getElementById('noticePeriod').value,
           canStartImmediately: document.getElementById('canStartImmediately').value,
-          nightShiftAvailable: document.getElementById('nightShiftAvailable').value,
+          currentSalary: document.getElementById('currentSalary').value,
+          expectedSalary: document.getElementById('expectedSalary').value,
           salaryExpectations: document.getElementById('salaryExpectations').value,
+          nightShiftAvailable: document.getElementById('nightShiftAvailable').value,
+          willingToTravel: document.getElementById('willingToTravel').value,
+          hasDriversLicense: document.getElementById('hasDriversLicense').value,
           yearsOfExperience: document.getElementById('yearsOfExperience').value,
           interviewAvailability: document.getElementById('interviewAvailability').value,
-          commute: document.getElementById('commute').value
+          commute: document.getElementById('commute').value,
+          referralSource: document.getElementById('referralSource').value,
+          whyThisCompany: document.getElementById('whyThisCompany').value,
+          whyThisRole: document.getElementById('whyThisRole').value,
+          greatestStrength: document.getElementById('greatestStrength').value,
+          greatestWeakness: document.getElementById('greatestWeakness').value,
+          longTermGoals: document.getElementById('longTermGoals').value
         }
       };
 
+      console.log('[Profile] Saving profile:', updatedProfile);
+      
       // Save to extension storage
-      await saveUserProfile(updatedProfile);
+      try {
+        await saveUserProfile(updatedProfile);
+        console.log('[Profile] Saved to local storage');
+      } catch (error) {
+        console.error('[Profile] Error saving to local storage:', error);
+      }
 
       // Save to backend database
-      const backendSaved = await saveProfileToBackend(updatedProfile);
+      let backendSaved = false;
+      try {
+        backendSaved = await saveProfileToBackend(updatedProfile);
+        console.log('[Profile] Backend save result:', backendSaved);
+      } catch (error) {
+        console.error('[Profile] Error saving to backend:', error);
+      }
 
       // Show success message
+      console.log('[Profile] Showing success message');
       tabContent.innerHTML = `
         <div class="message success">
           <svg class="message-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">

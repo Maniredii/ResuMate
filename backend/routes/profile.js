@@ -65,6 +65,7 @@ router.get('/profile', authenticateToken, (req, res) => {
           previousTitle: profileData.previousTitle || ''
         },
         education: {
+          highestEducationLevel: profileData.highestEducationLevel || '',
           degree: profileData.degree || '',
           major: profileData.major || '',
           university: profileData.university || '',
@@ -84,13 +85,24 @@ router.get('/profile', authenticateToken, (req, res) => {
         skills: profileData.skills || [],
         applicationQuestions: {
           speaksEnglish: profileData.speaksEnglish || 'Yes',
+          noticePeriod: profileData.noticePeriod || '',
           canStartImmediately: profileData.canStartImmediately || '',
-          nightShiftAvailable: profileData.nightShiftAvailable || '',
+          currentSalary: profileData.currentSalary || '',
+          expectedSalary: profileData.expectedSalary || '',
           salaryExpectations: profileData.salaryExpectations || '',
+          nightShiftAvailable: profileData.nightShiftAvailable || '',
+          willingToTravel: profileData.willingToTravel || '',
+          hasDriversLicense: profileData.hasDriversLicense || '',
           yearsOfExperience: profileData.yearsOfExperience || '',
           specificSkillYears: profileData.specificSkillYears || {},
           interviewAvailability: profileData.interviewAvailability || '',
-          commute: profileData.commute || ''
+          commute: profileData.commute || '',
+          referralSource: profileData.referralSource || '',
+          whyThisCompany: profileData.whyThisCompany || '',
+          whyThisRole: profileData.whyThisRole || '',
+          greatestStrength: profileData.greatestStrength || '',
+          greatestWeakness: profileData.greatestWeakness || '',
+          longTermGoals: profileData.longTermGoals || ''
         }
       }
     });
@@ -147,6 +159,7 @@ router.put('/profile', authenticateToken, sanitizeRequestBody, (req, res) => {
       previousTitle: profile.workExperience?.previousTitle || '',
       
       // Education
+      highestEducationLevel: profile.education?.highestEducationLevel || '',
       degree: profile.education?.degree || '',
       major: profile.education?.major || '',
       university: profile.education?.university || '',
@@ -168,13 +181,24 @@ router.put('/profile', authenticateToken, sanitizeRequestBody, (req, res) => {
       
       // Application Questions
       speaksEnglish: profile.applicationQuestions?.speaksEnglish || 'Yes',
+      noticePeriod: profile.applicationQuestions?.noticePeriod || '',
       canStartImmediately: profile.applicationQuestions?.canStartImmediately || '',
-      nightShiftAvailable: profile.applicationQuestions?.nightShiftAvailable || '',
+      currentSalary: profile.applicationQuestions?.currentSalary || '',
+      expectedSalary: profile.applicationQuestions?.expectedSalary || '',
       salaryExpectations: profile.applicationQuestions?.salaryExpectations || '',
+      nightShiftAvailable: profile.applicationQuestions?.nightShiftAvailable || '',
+      willingToTravel: profile.applicationQuestions?.willingToTravel || '',
+      hasDriversLicense: profile.applicationQuestions?.hasDriversLicense || '',
       yearsOfExperience: profile.applicationQuestions?.yearsOfExperience || '',
       specificSkillYears: profile.applicationQuestions?.specificSkillYears || {},
       interviewAvailability: profile.applicationQuestions?.interviewAvailability || '',
-      commute: profile.applicationQuestions?.commute || ''
+      commute: profile.applicationQuestions?.commute || '',
+      referralSource: profile.applicationQuestions?.referralSource || '',
+      whyThisCompany: profile.applicationQuestions?.whyThisCompany || '',
+      whyThisRole: profile.applicationQuestions?.whyThisRole || '',
+      greatestStrength: profile.applicationQuestions?.greatestStrength || '',
+      greatestWeakness: profile.applicationQuestions?.greatestWeakness || '',
+      longTermGoals: profile.applicationQuestions?.longTermGoals || ''
     };
 
     // Update user's name if provided
@@ -223,6 +247,7 @@ router.put('/profile', authenticateToken, sanitizeRequestBody, (req, res) => {
           previousTitle: profileData.previousTitle
         },
         education: {
+          highestEducationLevel: profileData.highestEducationLevel,
           degree: profileData.degree,
           major: profileData.major,
           university: profileData.university,
@@ -242,13 +267,24 @@ router.put('/profile', authenticateToken, sanitizeRequestBody, (req, res) => {
         skills: profileData.skills,
         applicationQuestions: {
           speaksEnglish: profileData.speaksEnglish,
+          noticePeriod: profileData.noticePeriod,
           canStartImmediately: profileData.canStartImmediately,
-          nightShiftAvailable: profileData.nightShiftAvailable,
+          currentSalary: profileData.currentSalary,
+          expectedSalary: profileData.expectedSalary,
           salaryExpectations: profileData.salaryExpectations,
+          nightShiftAvailable: profileData.nightShiftAvailable,
+          willingToTravel: profileData.willingToTravel,
+          hasDriversLicense: profileData.hasDriversLicense,
           yearsOfExperience: profileData.yearsOfExperience,
           specificSkillYears: profileData.specificSkillYears,
           interviewAvailability: profileData.interviewAvailability,
-          commute: profileData.commute
+          commute: profileData.commute,
+          referralSource: profileData.referralSource,
+          whyThisCompany: profileData.whyThisCompany,
+          whyThisRole: profileData.whyThisRole,
+          greatestStrength: profileData.greatestStrength,
+          greatestWeakness: profileData.greatestWeakness,
+          longTermGoals: profileData.longTermGoals
         }
       }
     });
