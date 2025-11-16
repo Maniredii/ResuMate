@@ -71,6 +71,12 @@ const Navbar = () => {
                 History
               </Link>
               <Link
+                to="/profile"
+                className="hover:text-blue-200 transition font-medium"
+              >
+                Profile
+              </Link>
+              <Link
                 to="/settings"
                 className="hover:text-blue-200 transition font-medium"
               >

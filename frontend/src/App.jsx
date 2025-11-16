@@ -9,6 +9,7 @@ import ApplyJob from './pages/ApplyJob'
 import ApplicationHistory from './pages/ApplicationHistory'
 import Settings from './pages/Settings'
 import LinkedInScraper from './pages/LinkedInScraper'
+import Profile from './pages/Profile'
 import { isAuthenticated } from './utils/auth'
 
 function App() {
@@ -68,6 +69,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <LinkedInScraper />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <Profile />
               </ProtectedRoute>
             }
           />

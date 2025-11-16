@@ -9,9 +9,12 @@
     "tabs"
   ],
   "host_permissions": [
-    "https://www.indeed.com/*",
+    "https://*.indeed.com/*",
+    "https://indeed.com/*",
     "https://wellfound.com/*",
+    "https://*.wellfound.com/*",
     "https://www.linkedin.com/*",
+    "https://*.linkedin.com/*",
     "http://localhost:5000/*"
   ],
   "action": {
@@ -25,12 +28,22 @@
   "content_scripts": [
     {
       "matches": [
-        "https://www.indeed.com/viewjob*",
-        "https://wellfound.com/jobs/*",
-        "https://www.linkedin.com/jobs/*"
+        "https://*.indeed.com/*",
+        "https://indeed.com/*",
+        "https://*.wellfound.com/*",
+        "https://wellfound.com/*",
+        "https://*.linkedin.com/*",
+        "https://linkedin.com/*",
+        "https://*.greenhouse.io/*",
+        "https://*.lever.co/*",
+        "https://*.workday.com/*",
+        "https://*.myworkdayjobs.com/*",
+        "https://*.smartrecruiters.com/*",
+        "https://*.jobvite.com/*"
       ],
-      "js": ["content.js"],
-      "css": ["content.css"]
+      "js": ["auto-apply.js", "autofill.js"],
+      "run_at": "document_idle",
+      "all_frames": false
     }
   ],
   "background": {

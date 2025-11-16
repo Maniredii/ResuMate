@@ -3,6 +3,17 @@
 ## Overview
 A Chrome/Edge browser extension that integrates with the Job Application Automation system, allowing you to apply to jobs directly from job posting pages.
 
+## ⚡ NEW: Automatic Quick Apply Feature
+**Save time by automatically filling job application forms!** The extension now includes an intelligent auto-apply system that:
+- 🔍 **Scans the entire page** for form fields
+- 🧠 **Detects field types** using smart pattern matching
+- ✍️ **Fills forms automatically** with your profile data
+- 🎯 **Handles multi-step forms** by clicking Next/Continue buttons
+- ✅ **Highlights filled fields** for easy review
+- 🔒 **Safe by default** - fills but doesn't auto-submit
+
+See [AUTO_APPLY_GUIDE.md](AUTO_APPLY_GUIDE.md) for the user guide and [../AUTO_APPLY_IMPLEMENTATION.md](../AUTO_APPLY_IMPLEMENTATION.md) for technical details.
+
 ## Features
 
 ### 🚀 Quick Apply Button
@@ -68,17 +79,24 @@ npm run dev
 
 ```
 extension/
-├── manifest.json          # Extension configuration
-├── popup.html            # Extension popup UI
-├── popup.js              # Popup logic
-├── content.js            # Content script (runs on job pages)
-├── content.css           # Floating button styles
-├── background.js         # Background service worker
-├── icons/                # Extension icons
+├── manifest.json              # Extension configuration
+├── popup.html                # Extension popup UI
+├── popup.js                  # Popup logic and profile management
+├── auto-apply.js             # NEW: Core auto-apply engine
+├── auto-apply-settings.js    # NEW: Auto-apply settings management
+├── autofill.js               # Auto-fill integration layer
+├── content.js                # Content script (runs on job pages)
+├── content.css               # Floating button styles
+├── background.js             # Background service worker
+├── user-profile.json         # Profile data template
+├── test-auto-apply.html      # NEW: Comprehensive test page
+├── icons/                    # Extension icons
 │   ├── icon16.png
 │   ├── icon48.png
 │   └── icon128.png
-└── README.md            # This file
+├── AUTO_APPLY_GUIDE.md       # NEW: User guide for auto-apply
+├── QUICK_APPLY_GUIDE.md      # Quick Apply feature guide
+└── README.md                 # This file
 ```
 
 ## How It Works
@@ -240,12 +258,16 @@ The extension requests these permissions:
 - Requires manual login
 
 ### Future Enhancements
+- ✅ **Automatic form filling** (IMPLEMENTED!)
+- ✅ **Multi-step form support** (IMPLEMENTED!)
+- ✅ **Intelligent field detection** (IMPLEMENTED!)
 - Cloud-hosted backend
 - Offline mode
 - Auto-login with saved credentials
 - Batch apply to multiple jobs
-- Application tracking
+- AI-powered custom answers
 - Browser notifications
+- Application success tracking
 
 ## Screenshots
 

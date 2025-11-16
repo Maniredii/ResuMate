@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Job Application Form</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 600px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .form-container {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #333;
+      margin-bottom: 10px;
+    }
+    .subtitle {
+      color: #666;
+      margin-bottom: 30px;
+    }
+    .form-group {
+      margin-bottom: 20px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      color: #333;
+      font-weight: 600;
+      font-size: 14px;
+    }
+    input, textarea, select {
+      width: 100%;
+      padding: 10px;
+      border: 2px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+      transition: border-color 0.3s;
+    }
+    input:focus, textarea:focus, select:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+    textarea {
+      resize: vertical;
+      min-height: 100px;
+    }
+    .submit-btn {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 14px 30px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 20px;
+    }
+    .submit-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
+    .section-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #667eea;
+      margin: 30px 0 15px 0;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #667eea;
+    }
+    .info-box {
+      background: #e3f2fd;
+      border-left: 4px solid #2196f3;
+      padding: 15px;
+      margin-bottom: 20px;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="form-container">
+    <h1>Software Engineer Position</h1>
+    <p class="subtitle">Tech Company Inc. - San Francisco, CA</p>
+    
+    <div class="info-box">
+      <strong>📝 Test the Quick Apply Feature:</strong><br>
+      1. Set up your profile in the extension<br>
+      2. Click the "Quick Apply" button that appears<br>
+      3. Watch the form auto-fill with your information!
+    </div>
+
+    <form id="applicationForm">
+      <div class="section-title">Personal Information</div>
+      
+      <div class="form-group">
+        <label for="firstName">First Name *</label>
+        <input type="text" id="firstName" name="firstName" required>
+      </div>
+
+      <div class="form-group">
+        <label for="lastName">Last Name *</label>
+        <input type="text" id="lastName" name="lastName" required>
+      </div>
+
+      <div class="form-group">
+        <label for="email">Email Address *</label>
+        <input type="email" id="email" name="email" required>
+      </div>
+
+      <div class="form-group">
+        <label for="phone">Phone Number *</label>
+        <input type="tel" id="phone" name="phone" required>
+      </div>
+
+      <div class="section-title">Location</div>
+
+      <div class="form-group">
+        <label for="streetAddress">Street Address</label>
+        <input type="text" id="streetAddress" name="streetAddress" placeholder="123 Main Street, Apt 4B">
+      </div>
+
+      <div class="form-group">
+        <label for="city">City *</label>
+        <input type="text" id="city" name="city" required>
+      </div>
+
+      <div class="form-group">
+        <label for="state">State/Province *</label>
+        <input type="text" id="state" name="state" required>
+      </div>
+
+      <div class="form-group">
+        <label for="country">Country *</label>
+        <input type="text" id="country" name="country" required>
+      </div>
+
+      <div class="form-group">
+        <label for="zipCode">Zip Code</label>
+        <input type="text" id="zipCode" name="zipCode">
+      </div>
+
+      <div class="section-title">Professional Links</div>
+
+      <div class="form-group">
+        <label for="linkedIn">LinkedIn Profile</label>
+        <input type="url" id="linkedIn" name="linkedIn" placeholder="https://linkedin.com/in/yourprofile">
+      </div>
+
+      <div class="form-group">
+        <label for="portfolio">Portfolio/Website</label>
+        <input type="url" id="portfolio" name="portfolio" placeholder="https://yourwebsite.com">
+      </div>
+
+      <div class="form-group">
+        <label for="github">GitHub Profile</label>
+        <input type="url" id="github" name="github" placeholder="https://github.com/yourusername">
+      </div>
+
+      <div class="section-title">Work Experience</div>
+
+      <div class="form-group">
+        <label for="currentTitle">Current Job Title</label>
+        <input type="text" id="currentTitle" name="currentTitle">
+      </div>
+
+      <div class="form-group">
+        <label for="currentCompany">Current Company</label>
+        <input type="text" id="currentCompany" name="currentCompany">
+      </div>
+
+      <div class="form-group">
+        <label for="yearsExperience">Years of Experience</label>
+        <input type="text" id="yearsExperience" name="yearsExperience">
+      </div>
+
+      <div class="section-title">Education</div>
+
+      <div class="form-group">
+        <label for="degree">Highest Degree</label>
+        <input type="text" id="degree" name="degree" placeholder="e.g., Bachelor's in Computer Science">
+      </div>
+
+      <div class="form-group">
+        <label for="university">University/College</label>
+        <input type="text" id="university" name="university">
+      </div>
+
+      <div class="section-title">Additional Information</div>
+
+      <div class="form-group">
+        <label for="coverLetter">Cover Letter / Why do you want to work here?</label>
+        <textarea id="coverLetter" name="coverLetter" placeholder="Tell us why you're interested in this position..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="workAuthorization">Work Authorization</label>
+        <select id="workAuthorization" name="workAuthorization">
+          <option value="">Select...</option>
+          <option value="us_citizen">US Citizen</option>
+          <option value="green_card">Green Card Holder</option>
+          <option value="work_visa">Work Visa (H1B, etc.)</option>
+          <option value="requires_sponsorship">Requires Sponsorship</option>
+        </select>
+      </div>
+
+      <button type="submit" class="submit-btn">Submit Application</button>
+    </form>
+  </div>
+
+  <script>
+    document.getElementById('applicationForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      alert('✅ Form submitted successfully!\n\nIn a real application, this would send your data to the company.');
+      
+      // Show filled data
+      const formData = new FormData(e.target);
+      console.log('Form Data:', Object.fromEntries(formData));
+    });
+  </script>
+</body>
+</html>

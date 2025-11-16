@@ -1,0 +1,47 @@
+{
+  "personalInfo": {
+    "firstName": "",
+    "lastName": "",
+    "fullName": "",
+    "email": "",
+    "phone": "",
+    "location": {
+      "streetAddress": "",
+      "city": "",
+      "state": "",
+      "country": "",
+      "zipCode": ""
+    },
+    "linkedIn": "",
+    "portfolio": "",
+    "github": ""
+  },
+  "workExperience": {
+    "currentCompany": "",
+    "currentTitle": "",
+    "yearsOfExperience": "",
+    "previousCompany": "",
+    "previousTitle": ""
+  },
+  "education": {
+    "degree": "",
+    "major": "",
+    "university": "",
+    "graduationYear": ""
+  },
+  "preferences": {
+    "desiredSalary": "",
+    "willingToRelocate": false,
+    "requiresSponsorship": false,
+    "availableStartDate": "",
+    "workAuthorization": ""
+  },
+  "additionalInfo": {
+    "coverLetterTemplate": "",
+    "customAnswers": {
+      "whyThisCompany": "",
+      "whyThisRole": "",
+      "availability": ""
+    }
+  }
+}

@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quick Apply Button Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .test-box {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+    h1 {
+      color: #333;
+    }
+    .status {
+      padding: 15px;
+      border-radius: 8px;
+      margin: 10px 0;
+    }
+    .success {
+      background: #d1fae5;
+      color: #065f46;
+      border: 2px solid #10b981;
+    }
+    .error {
+      background: #fee2e2;
+      color: #991b1b;
+      border: 2px solid #ef4444;
+    }
+    .info {
+      background: #dbeafe;
+      color: #1e40af;
+      border: 2px solid #3b82f6;
+    }
+    button {
+      background: #667eea;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      margin: 5px;
+    }
+    button:hover {
+      background: #5568d3;
+    }
+    code {
+      background: #f3f4f6;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: monospace;
+    }
+  </style>
+</head>
+<body>
+  <div class="test-box">
+    <h1>🧪 Quick Apply Button Test</h1>
+    <p>This page tests if the Quick Apply button appears correctly.</p>
+  </div>
+
+  <div class="test-box">
+    <h2>📋 Checklist</h2>
+    <div id="checklist">
+      <p>⏳ Running tests...</p>
+    </div>
+  </div>
+
+  <div class="test-box">
+    <h2>🔍 Console Output</h2>
+    <div id="console-output" style="background: #1f2937; color: #10b981; padding: 15px; border-radius: 8px; font-family: monospace; font-size: 12px; max-height: 300px; overflow-y: auto;">
+      <div id="console-log"></div>
+    </div>
+  </div>
+
+  <div class="test-box">
+    <h2>🎯 Expected Result</h2>
+    <div class="info">
+      <strong>✓ You should see:</strong>
+      <ul>
+        <li>A purple "⚡ Quick Apply" button in the bottom-right corner</li>
+        <li>Green checkmarks in the checklist above</li>
+        <li>Console messages showing the script loaded</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="test-box">
+    <h2>🔧 Manual Tests</h2>
+    <button onclick="testButtonExists()">Check if Button Exists</button>
+    <button onclick="testAutoFillFunction()">Check AutoFill Function</button>
+    <button onclick="testCreateButton()">Manually Create Button</button>
+    <button onclick="clearConsole()">Clear Console</button>
+    <div id="test-results" style="margin-top: 15px;"></div>
+  </div>
+
+  <script>
+    // Capture console.log
+    const originalLog = console.log;
+    const consoleDiv = document.getElementById('console-log');
+    
+    console.log = function(...args) {
+      originalLog.apply(console, args);
+      const message = args.map(arg => 
+        typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
+      ).join(' ');
+      consoleDiv.innerHTML += `<div>${new Date().toLocaleTimeString()}: ${message}</div>`;
+      consoleDiv.parentElement.scrollTop = consoleDiv.parentElement.scrollHeight;
+    };
+
+    // Run tests after a delay to let extension load
+    setTimeout(runTests, 1000);
+
+    function runTests() {
+      const checklist = document.getElementById('checklist');
+      let html = '';
+
+      // Test 1: Check if autofill.js loaded
+      const autoFillExists = typeof window.autoFillForm === 'function';
+      html += `<div class="${autoFillExists ? 'success' : 'error'}">
+        ${autoFillExists ? '✓' : '✗'} AutoFill script loaded: ${autoFillExists ? 'YES' : 'NO'}
+      </div>`;
+
+      // Test 2: Check if button exists
+      const button = document.getElementById('quick-apply-btn');
+      html += `<div class="${button ? 'success' : 'error'}">
+        ${button ? '✓' : '✗'} Quick Apply button exists: ${button ? 'YES' : 'NO'}
+      </div>`;
+
+      // Test 3: Check if button is visible
+      if (button) {
+        const isVisible = button.offsetParent !== null;
+        html += `<div class="${isVisible ? 'success' : 'error'}">
+          ${isVisible ? '✓' : '✗'} Button is visible: ${isVisible ? 'YES' : 'NO'}
+        </div>`;
+      }
+
+      // Test 4: Check chrome.storage
+      const hasStorage = typeof chrome !== 'undefined' && chrome.storage;
+      html += `<div class="${hasStorage ? 'success' : 'error'}">
+        ${hasStorage ? '✓' : '✗'} Chrome storage API available: ${hasStorage ? 'YES' : 'NO'}
+      </div>`;
+
+      checklist.innerHTML = html;
+
+      // Log summary
+      console.log('=== Test Summary ===');
+      console.log('AutoFill loaded:', autoFillExists);
+      console.log('Button exists:', !!button);
+      console.log('Chrome storage:', hasStorage);
+    }
+
+    function testButtonExists() {
+      const button = document.getElementById('quick-apply-btn');
+      const results = document.getElementById('test-results');
+      if (button) {
+        results.innerHTML = '<div class="success">✓ Button found! Check bottom-right corner.</div>';
+        button.style.animation = 'pulse 1s';
+      } else {
+        results.innerHTML = '<div class="error">✗ Button not found. Extension may not be loaded.</div>';
+      }
+    }
+
+    function testAutoFillFunction() {
+      const results = document.getElementById('test-results');
+      if (typeof window.autoFillForm === 'function') {
+        results.innerHTML = '<div class="success">✓ AutoFill function is available!</div>';
+      } else {
+        results.innerHTML = '<div class="error">✗ AutoFill function not found. Script not loaded.</div>';
+      }
+    }
+
+    function testCreateButton() {
+      const results = document.getElementById('test-results');
+      
+      // Remove existing button if any
+      const existing = document.getElementById('quick-apply-btn');
+      if (existing) existing.remove();
+
+      // Create button manually
+      const btn = document.createElement('button');
+      btn.id = 'quick-apply-btn';
+      btn.innerHTML = `
+        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="display: inline-block; vertical-align: middle; margin-right: 8px;">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+        </svg>
+        <span>Quick Apply (Manual)</span>
+      `;
+      btn.style.cssText = `
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 999999;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 50px;
+        padding: 14px 24px;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        box-shadow: 0 4px 20px rgba(102, 126, 234, 0.5);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.3s ease;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      `;
+      
+      btn.addEventListener('click', () => {
+        alert('Button clicked! In the real extension, this would auto-fill the form.');
+      });
+
+      document.body.appendChild(btn);
+      results.innerHTML = '<div class="success">✓ Button created manually! Check bottom-right corner.</div>';
+      console.log('Manual button created');
+    }
+
+    function clearConsole() {
+      consoleDiv.innerHTML = '';
+      console.log('Console cleared');
+    }
+
+    // Log page load
+    console.log('Test page loaded');
+    console.log('Waiting for extension to inject scripts...');
+  </script>
+</body>
+</html>
