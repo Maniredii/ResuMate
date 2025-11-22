@@ -41,7 +41,7 @@
         "https://*.smartrecruiters.com/*",
         "https://*.jobvite.com/*"
       ],
-      "js": ["auto-apply.js", "autofill.js"],
+      "js": ["performance-utils.js", "auto-apply.js", "autofill.js"],
       "run_at": "document_idle",
       "all_frames": false
     }

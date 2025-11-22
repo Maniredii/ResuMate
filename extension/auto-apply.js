@@ -118,7 +118,7 @@ class AutoApply {
     }
   }
 
-  // Scan page for all form elements and structure
+  // Scan page for all form elements and structure (optimized)
   scanPage() {
     const formData = {
       inputs: [],
@@ -134,11 +134,11 @@ class AutoApply {
       }
     };
 
-    // Get all form elements
-    const allInputs = document.querySelectorAll('input:not([type="hidden"]):not([type="submit"]):not([type="button"])');
-    const allTextareas = document.querySelectorAll('textarea');
-    const allSelects = document.querySelectorAll('select');
-    const allButtons = document.querySelectorAll('button, input[type="submit"], input[type="button"]');
+    // Get all form elements (optimized selector)
+    const allInputs = document.querySelectorAll('input:not([type="hidden"]):not([type="submit"]):not([type="button"]):not([disabled])');
+    const allTextareas = document.querySelectorAll('textarea:not([disabled])');
+    const allSelects = document.querySelectorAll('select:not([disabled])');
+    const allButtons = document.querySelectorAll('button:not([disabled]), input[type="submit"]:not([disabled]), input[type="button"]:not([disabled])');
 
     // Categorize inputs
     allInputs.forEach(input => {
@@ -380,32 +380,34 @@ class AutoApply {
     return 'unknown';
   }
 
-  // Fill all detected fields with profile data
+  // Fill all detected fields with profile data (optimized)
   async fillAllFields(formData) {
-    // Fill text inputs
+    // Batch fill text inputs (reduce delays)
     for (const field of formData.inputs) {
       const value = this.getValueForField(field.fieldType);
       if (value) {
         await this.fillField(field.element, value);
         this.filledFields.push(field.fieldType);
-        await this.wait(100); // Small delay between fields
+        await this.wait(50); // Reduced delay for better performance
       }
     }
 
     // Fill textareas (with AI generation for custom questions)
+    const aiPromises = [];
     for (const field of formData.textareas) {
       let value = this.getValueForField(field.fieldType);
       
       // If no value in profile, try AI generation for ANY question
       if (!value && field.label && field.label.length > 3) {
         console.log('[Auto-Apply] No profile answer found. Generating AI answer for:', field.label);
-        value = await this.generateAIAnswer(field);
-      }
-      
-      if (value) {
+        // Queue AI generation (don't await yet)
+        aiPromises.push(
+          this.generateAIAnswer(field).then(aiValue => ({ field, value: aiValue }))
+        );
+      } else if (value) {
         await this.fillField(field.element, value);
         this.filledFields.push(field.fieldType);
-        await this.wait(100);
+        await this.wait(50);
       }
     }
 
@@ -416,18 +418,26 @@ class AutoApply {
         
         if (!value) {
           console.log('[Auto-Apply] Generating AI answer for input field:', field.label || field.placeholder);
-          value = await this.generateAIAnswer(field);
-          
-          if (value) {
-            await this.fillField(field.element, value);
-            this.filledFields.push('ai-generated');
-            await this.wait(100);
-          }
+          aiPromises.push(
+            this.generateAIAnswer(field).then(aiValue => ({ field, value: aiValue }))
+          );
         }
       }
     }
 
-    // Fill selects
+    // Wait for all AI generations in parallel (much faster)
+    if (aiPromises.length > 0) {
+      const aiResults = await Promise.all(aiPromises);
+      for (const result of aiResults) {
+        if (result.value) {
+          await this.fillField(result.field.element, result.value);
+          this.filledFields.push('ai-generated');
+          await this.wait(50);
+        }
+      }
+    }
+
+    // Fill selects (optimized)
     console.log(`[Auto-Apply] Found ${formData.selects.length} dropdown fields`);
     for (const field of formData.selects) {
       const value = this.getValueForField(field.fieldType);
@@ -437,19 +447,19 @@ class AutoApply {
         if (success) {
           this.filledFields.push(field.fieldType);
         }
-        await this.wait(100);
+        await this.wait(50); // Reduced delay
       } else {
         console.log(`[Auto-Apply] No value found for dropdown: ${field.fieldType} (${field.label})`);
       }
     }
 
-    // Fill checkboxes
+    // Fill checkboxes (optimized)
     for (const field of formData.checkboxes) {
       const value = this.getValueForField(field.fieldType);
       if (typeof value === 'boolean') {
         await this.fillCheckbox(field.element, value);
         this.filledFields.push(field.fieldType);
-        await this.wait(100);
+        await this.wait(30); // Minimal delay for checkboxes
       }
     }
   }
@@ -879,12 +889,12 @@ class AutoApply {
     return '';
   }
 
-  // Check if element is visible
+  // Check if element is visible (optimized with caching)
   isVisible(element) {
     if (!element) return false;
     
-    const style = window.getComputedStyle(element);
-    if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
+    // Quick checks first (no style computation)
+    if (element.offsetParent === null && element.tagName !== 'BODY') {
       return false;
     }
     
@@ -893,18 +903,26 @@ class AutoApply {
       return false;
     }
     
+    // Only compute style if needed
+    const style = window.getComputedStyle(element);
+    if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
+      return false;
+    }
+    
     return true;
   }
 
-  // Highlight all filled fields
+  // Highlight all filled fields (optimized with batching)
   highlightFilledFields() {
-    const inputs = document.querySelectorAll('input[value]:not([value=""]), textarea:not(:empty), select');
-    inputs.forEach(input => {
-      if (input.value && input.value.trim() !== '') {
-        input.style.borderColor = '#10b981';
-        input.style.borderWidth = '2px';
-        input.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.1)';
-      }
+    requestAnimationFrame(() => {
+      const inputs = document.querySelectorAll('input[value]:not([value=""]), textarea:not(:empty), select');
+      inputs.forEach(input => {
+        if (input.value && input.value.trim() !== '') {
+          input.style.borderColor = '#10b981';
+          input.style.borderWidth = '2px';
+          input.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.1)';
+        }
+      });
     });
   }
 

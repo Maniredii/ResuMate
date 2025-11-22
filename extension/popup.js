@@ -26,25 +26,41 @@ async function saveUserData(userData) {
   await chrome.storage.local.set({ userData });
 }
 
-// Get user profile for auto-fill
+// Cache for user profile to reduce storage reads
+let profileCache = null;
+let profileCacheTime = 0;
+const PROFILE_CACHE_DURATION = 30000; // 30 seconds
+
+// Get user profile for auto-fill (with caching)
 async function getUserProfile() {
+  // Return cached profile if still valid
+  if (profileCache && (Date.now() - profileCacheTime) < PROFILE_CACHE_DURATION) {
+    return profileCache;
+  }
+
   console.log('[Storage] Loading profile from chrome.storage.local');
   try {
     const result = await chrome.storage.local.get(['userProfile']);
     console.log('[Storage] Profile loaded:', result.userProfile);
-    return result.userProfile || null;
+    profileCache = result.userProfile || null;
+    profileCacheTime = Date.now();
+    return profileCache;
   } catch (error) {
     console.error('[Storage] Error loading profile:', error);
     return null;
   }
 }
 
-// Save user profile for auto-fill
+// Save user profile for auto-fill (with cache invalidation)
 async function saveUserProfile(profile) {
   console.log('[Storage] Saving profile to chrome.storage.local:', profile);
   try {
     await chrome.storage.local.set({ userProfile: profile });
     console.log('[Storage] Profile saved successfully');
+    
+    // Update cache
+    profileCache = profile;
+    profileCacheTime = Date.now();
     
     // Verify it was saved
     const result = await chrome.storage.local.get(['userProfile']);

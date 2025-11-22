@@ -1,18 +1,45 @@
 // Auto-fill job application forms with user profile data
 
-// Load user profile from storage
+// Cache for user profile
+let profileCache = null;
+let profileCacheTime = 0;
+const PROFILE_CACHE_DURATION = 30000; // 30 seconds
+
+// Load user profile from storage (with caching)
 async function getUserProfile() {
+  // Return cached profile if still valid
+  if (profileCache && (Date.now() - profileCacheTime) < PROFILE_CACHE_DURATION) {
+    return profileCache;
+  }
+
   const result = await chrome.storage.local.get(['userProfile']);
-  return result.userProfile || null;
+  profileCache = result.userProfile || null;
+  profileCacheTime = Date.now();
+  return profileCache;
 }
 
-// Save user profile to storage
+// Save user profile to storage (with cache invalidation)
 async function saveUserProfile(profile) {
   await chrome.storage.local.set({ userProfile: profile });
+  // Update cache
+  profileCache = profile;
+  profileCacheTime = Date.now();
+  // Notify background worker
+  chrome.runtime.sendMessage({ action: 'profileSaved' });
 }
 
+// Cache for detected fields to avoid re-scanning
+let cachedFields = null;
+let cacheTimestamp = 0;
+const CACHE_DURATION = 5000; // 5 seconds
+
 // Detect form fields and their types
-function detectFormFields() {
+function detectFormFields(useCache = true) {
+  // Return cached fields if still valid
+  if (useCache && cachedFields && (Date.now() - cacheTimestamp) < CACHE_DURATION) {
+    return cachedFields;
+  }
+
   const fields = {
     firstName: null,
     lastName: null,
@@ -33,8 +60,8 @@ function detectFormFields() {
     customFields: []
   };
 
-  // Get all input, textarea, and select elements
-  const inputs = document.querySelectorAll('input, textarea, select');
+  // Get all input, textarea, and select elements (more specific selector for performance)
+  const inputs = document.querySelectorAll('input:not([type="hidden"]):not([type="submit"]):not([type="button"]), textarea, select');
 
   inputs.forEach(input => {
     const id = input.id?.toLowerCase() || '';
@@ -118,6 +145,10 @@ function detectFormFields() {
       });
     }
   });
+
+  // Cache the results
+  cachedFields = fields;
+  cacheTimestamp = Date.now();
 
   return fields;
 }
@@ -247,6 +278,21 @@ async function autoFillForm() {
   }
 }
 
+// Batch DOM updates for better performance
+const pendingVisualUpdates = [];
+let visualUpdateScheduled = false;
+
+function scheduleVisualUpdate() {
+  if (!visualUpdateScheduled) {
+    visualUpdateScheduled = true;
+    requestAnimationFrame(() => {
+      pendingVisualUpdates.forEach(fn => fn());
+      pendingVisualUpdates.length = 0;
+      visualUpdateScheduled = false;
+    });
+  }
+}
+
 // Fill input with value and trigger events
 function fillInput(element, value) {
   if (!element || !value) return;
@@ -259,21 +305,28 @@ function fillInput(element, value) {
   element.dispatchEvent(new Event('change', { bubbles: true }));
   element.dispatchEvent(new Event('blur', { bubbles: true }));
 
-  // Add visual feedback
-  element.style.backgroundColor = '#d1fae5';
-  setTimeout(() => {
-    element.style.backgroundColor = '';
-  }, 2000);
+  // Add visual feedback (batched for performance)
+  pendingVisualUpdates.push(() => {
+    element.style.backgroundColor = '#d1fae5';
+    setTimeout(() => {
+      element.style.backgroundColor = '';
+    }, 2000);
+  });
+  scheduleVisualUpdate();
 }
 
-// Highlight all filled fields
+// Highlight all filled fields (optimized with batching)
 function highlightFilledFields() {
-  const inputs = document.querySelectorAll('input[value]:not([value=""]), textarea:not(:empty)');
-  inputs.forEach(input => {
-    if (input.value && input.value.trim() !== '') {
-      input.style.borderColor = '#10b981';
-      input.style.borderWidth = '2px';
-    }
+  requestAnimationFrame(() => {
+    const inputs = document.querySelectorAll('input[value]:not([value=""]), textarea:not(:empty)');
+    const fragment = document.createDocumentFragment();
+    
+    inputs.forEach(input => {
+      if (input.value && input.value.trim() !== '') {
+        input.style.borderColor = '#10b981';
+        input.style.borderWidth = '2px';
+      }
+    });
   });
 }
 
@@ -402,18 +455,29 @@ function showQuickApplyButton() {
   console.log('[Quick Apply] Button added to page!');
 }
 
-// Initialize on page load
+// Initialize on page load (with debouncing)
 console.log('[Quick Apply] Autofill script loaded!');
+
+// Debounced button initialization to avoid multiple calls
+let buttonInitialized = false;
+const initButton = () => {
+  if (!buttonInitialized) {
+    buttonInitialized = true;
+    showQuickApplyButton();
+  }
+};
 
 if (document.readyState === 'loading') {
   console.log('[Quick Apply] Waiting for DOM...');
   document.addEventListener('DOMContentLoaded', () => {
     console.log('[Quick Apply] DOM loaded, showing button...');
-    showQuickApplyButton();
+    // Delay button creation slightly to let page settle
+    setTimeout(initButton, 500);
   });
 } else {
   console.log('[Quick Apply] DOM already loaded, showing button...');
-  showQuickApplyButton();
+  // Delay button creation slightly to let page settle
+  setTimeout(initButton, 500);
 }
 
 // Listen for messages from popup

@@ -8,6 +8,8 @@ import uploadRoutes from './routes/upload.js';
 import jobRoutes from './routes/job.js';
 import profileRoutes from './routes/profile.js';
 import aiRoutes from './routes/ai.js';
+import resumeRoutes from './routes/resume.js';
+import jobValidationRoutes from './routes/job-validation.js';
 import { logApiError, logError } from './utils/logger.js';
 
 // Load environment variables
@@ -29,6 +31,8 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/job', jobRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/resume', resumeRoutes);
+app.use('/api/job-validation', jobValidationRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
