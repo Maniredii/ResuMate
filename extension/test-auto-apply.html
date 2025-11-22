@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Auto-Apply Test - Job Application Form</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 40px 20px;
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 700px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 16px;
+      padding: 40px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    h1 { color: #1f2937; margin-bottom: 10px; font-size: 28px; }
+    .subtitle { color: #6b7280; margin-bottom: 30px; font-size: 14px; }
+    .section { margin-bottom: 30px; }
+    .section-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #1f2937;
+      margin-bottom: 15px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #e5e7eb;
+    }
+    .form-group { margin-bottom: 16px; }
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 6px;
+    }
+    .required { color: #ef4444; }
+    input, textarea, select {
+      width: 100%;
+      padding: 10px 12px;
+      border: 2px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 14px;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+    input:focus, textarea:focus, select:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    textarea { resize: vertical; min-height: 80px; }
+    .checkbox-group { display: flex; align-items: center; gap: 8px; }
+    .checkbox-group input[type="checkbox"] { width: auto; }
+    .button-group { display: flex; gap: 12px; margin-top: 30px; }
+    button {
+      flex: 1;
+      padding: 14px 24px;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+    .btn-secondary { background: #f3f4f6; color: #374151; }
+    .btn-secondary:hover { background: #e5e7eb; }
+    .info-box {
+      background: #dbeafe;
+      border-left: 4px solid #3b82f6;
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-size: 13px;
+      color: #1e40af;
+    }
+    .success-message {
+      background: #d1fae5;
+      border: 2px solid #10b981;
+      padding: 16px;
+      border-radius: 8px;
+      text-align: center;
+      font-weight: 600;
+      color: #065f46;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🚀 Job Application Form</h1>
+    <p class="subtitle">Test the Auto-Apply feature by clicking the Quick Apply button</p>
+    
+    <div class="info-box">
+      💡 <strong>Tip:</strong> The Quick Apply button should appear in the bottom-right corner. 
+      Click it to automatically fill this entire form with your profile data!
+    </div>
+
+    <form id="jobApplicationForm">
+      <div class="section">
+        <h2 class="section-title">Personal Information</h2>
+        <div class="form-group">
+          <label>First Name <span class="required">*</span></label>
+          <input type="text" name="firstName" id="firstName" required>
+        </div>
+        <div class="form-group">
+          <label>Last Name <span class="required">*</span></label>
+          <input type="text" name="lastName" id="lastName" required>
+        </div>
+        <div class="form-group">
+          <label>Email Address <span class="required">*</span></label>
+          <input type="email" name="email" id="email" required>
+        </div>
+        <div class="form-group">
+          <label>Phone Number <span class="required">*</span></label>
+          <input type="tel" name="phone" id="phone" required>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2 class="section-title">Location</h2>
+        <div class="form-group">
+          <label>Street Address</label>
+          <input type="text" name="streetAddress" id="streetAddress">
+        </div>
+        <div class="form-group">
+          <label>City</label>
+          <input type="text" name="city" id="city">
+        </div>
+        <div class="form-group">
+          <label>State/Province</label>
+          <input type="text" name="state" id="state">
+        </div>
+        <div class="form-group">
+          <label>Zip Code</label>
+          <input type="text" name="zipCode" id="zipCode">
+        </div>
+        <div class="form-group">
+          <label>Country</label>
+          <input type="text" name="country" id="country">
+        </div>
+      </div>
+
+      <div class="section">
+        <h2 class="section-title">Professional Links</h2>
+        <div class="form-group">
+          <label>LinkedIn Profile</label>
+          <input type="url" name="linkedIn" id="linkedIn">
+        </div>
+        <div class="form-group">
+          <label>Portfolio/Website</label>
+          <input type="url" name="portfolio" id="portfolio">
+        </div>
+        <div class="form-group">
+          <label>GitHub Profile</label>
+          <input type="url" name="github" id="github">
+        </div>
+      </div>
+
+      <div class="section">
+        <h2 class="section-title">Work Experience</h2>
+        <div class="form-group">
+          <label>Current Job Title</label>
+          <input type="text" name="currentTitle" id="currentTitle">
+        </div>
+        <div class="form-group">
+          <label>Current Company</label>
+          <input type="text" name="currentCompany" id="currentCompany">
+        </div>
+        <div class="form-group">
+          <label>Years of Experience</label>
+          <input type="text" name="yearsOfExperience" id="yearsOfExperience">
+        </div>
+      </div>
+
+      <div class="section">
+        <h2 class="section-title">Application Questions</h2>
+        <div class="form-group">
+          <label>Do you speak English?</label>
+          <select name="speaksEnglish" id="speaksEnglish">
+            <option value="">Select...</option>
+            <option value="Yes">Yes</option>
+            <option value="No">No</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Can you start immediately?</label>
+          <textarea name="canStartImmediately" id="canStartImmediately"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Work Authorization</label>
+          <input type="text" name="workAuthorization" id="workAuthorization">
+        </div>
+        <div class="form-group checkbox-group">
+          <input type="checkbox" name="willingToRelocate" id="willingToRelocate">
+          <label for="willingToRelocate">I am willing to relocate</label>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2 class="section-title">Cover Letter</h2>
+        <div class="form-group">
+          <label>Why are you interested in this position?</label>
+          <textarea name="coverLetter" id="coverLetter" rows="6"></textarea>
+        </div>
+      </div>
+
+      <div class="button-group">
+        <button type="button" class="btn-secondary" onclick="clearForm()">Clear Form</button>
+        <button type="submit" class="btn-primary">Submit Application</button>
+      </div>
+    </form>
+
+    <div class="success-message" id="successMessage">
+      ✅ Application submitted successfully!
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('jobApplicationForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      document.getElementById('successMessage').style.display = 'block';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      setTimeout(() => {
+        document.getElementById('successMessage').style.display = 'none';
+      }, 3000);
+    });
+
+    function clearForm() {
+      document.getElementById('jobApplicationForm').reset();
+      document.querySelectorAll('input, textarea, select').forEach(el => {
+        el.style.backgroundColor = '';
+        el.style.borderColor = '';
+        el.style.borderWidth = '';
+        el.style.boxShadow = '';
+      });
+    }
+  </script>
+</body>
+</html>

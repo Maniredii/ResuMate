@@ -641,7 +641,7 @@ async function showProfileSetup() {
       },
       applicationQuestions: {
         speaksEnglish: 'Yes',
-        canStartImmediately: '',
+        canStartImmediately: 'Yes',
         nightShiftAvailable: '',
         salaryExpectations: '',
         yearsOfExperience: '',
